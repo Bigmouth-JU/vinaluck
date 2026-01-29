@@ -72,18 +72,28 @@ const DailyLuck: React.FC<DailyLuckProps> = ({ onZodiacSelect, t }) => {
             </div>
 
             {/* 4x3 GRID Layout for Quick Access */}
-            <div className="grid grid-cols-4 gap-x-2 gap-y-4 pt-1">
+            <div className="grid grid-cols-4 gap-x-2 gap-y-6 pt-2 pb-2">
                 {ZODIACS.map((animal) => (
                     <div 
                         key={animal.id} 
                         onClick={() => handleIconClick(animal.id)}
-                        className="flex flex-col items-center gap-1.5 cursor-pointer group active:scale-95 transition-transform"
+                        className="flex flex-col items-center gap-2 cursor-pointer group active:scale-95 transition-transform"
                     >
-                        <div className={`w-14 h-14 rounded-2xl ${animal.id === 'monkey' ? 'bg-yellow-50 border-yellow-100' : 'bg-white border-gray-100'} border group-hover:border-primary/50 group-hover:shadow-md transition-all flex items-center justify-center p-1.5`}>
+                        {/* 
+                           UPDATED CONTAINER STYLES:
+                           - w-20 h-20: Increased size (approx 80px)
+                           - p-0: Removed padding so image fills to edge
+                           - overflow-hidden: Ensures circular mask
+                        */}
+                        <div className={`w-20 h-20 rounded-full ${animal.id === 'monkey' ? 'bg-yellow-50 border-yellow-100' : 'bg-white border-gray-100'} border-2 group-hover:border-primary/50 group-hover:shadow-md transition-all flex items-center justify-center p-0 overflow-hidden`}>
                             {animal.image ? (
-                                <img alt={animal.name} className="w-full h-full object-contain" src={animal.image} />
+                                <img 
+                                    alt={animal.name} 
+                                    className="w-full h-full object-cover" 
+                                    src={animal.image} 
+                                />
                             ) : (
-                                <div className="text-xl">{animal.emoji}</div>
+                                <div className="text-2xl">{animal.emoji}</div>
                             )}
                         </div>
                         <span className="text-[10px] font-bold text-gray-700 group-hover:text-primary transition-colors">
@@ -94,7 +104,7 @@ const DailyLuck: React.FC<DailyLuckProps> = ({ onZodiacSelect, t }) => {
             </div>
 
             {/* Promo Banner Text (Replaces Shopee/Lucky Item Section) */}
-            <div className="mt-2 bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-center gap-2">
+            <div className="mt-1 bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex items-center justify-center gap-2">
                 <Sparkles size={16} className="text-yellow-400 fill-yellow-400" />
                 <span className="text-sm font-medium text-gray-600 text-center leading-tight">
                     {PROMO_TEXT[lang]}

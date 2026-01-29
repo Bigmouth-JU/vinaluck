@@ -4,9 +4,9 @@ import { ZodiacFortune, ZodiacAnimal, DreamInterpretation } from "./types";
 export const IMAGES = {
     QR_CODE: "https://lh3.googleusercontent.com/aida-public/AB6AXuDyf0kh57WWHUNwPcLDGiewH3aWBxjArHc1aEhdkmA3figOkbY2nAgHlBEsO_nt-OtwtBL0xfUIupAzYSiYtl3cCgYJIxfWAJmreaen3dVuajo6_h5lOAyiST3mOqTQ0gi1WOQsJ5JHNo6R30j1ABFNcz8eBakT4TNxxtJEKqzhPv0k35kaxDbmyPYUz-yvODh4TOhw6ZCm9WV4rah1GkTG1ZLpskf5l-QfQ6kUsCNGVyAd5S_s0iJpY818JGCQ5Xzzt8_83x69m-w",
     // Custom Ink Wash Style Zodiac Assets
-    // Please ensure these images are placed in your public/assets/zodiac/ directory
+    // Updated to Lowercase for exact filename matching as requested
     RAT: "/assets/zodiac/rat.png",
-    OX: "/assets/zodiac/ox.png",
+    OX: "/assets/zodiac/cow.png", // File is named cow.png
     TIGER: "/assets/zodiac/tiger.png",
     CAT: "/assets/zodiac/cat.png",
     DRAGON: "/assets/zodiac/dragon.png",
