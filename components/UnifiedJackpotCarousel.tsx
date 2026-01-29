@@ -2,10 +2,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GlobalTranslation } from '../App';
 import { Trophy, Clock } from 'lucide-react';
-import { LottoService, LottoResult } from '../services/lottoApi';
+import { LottoResult } from '../services/lottoApi';
 
 interface UnifiedJackpotCarouselProps {
     t: GlobalTranslation;
+    data: LottoResult[];
 }
 
 // DEFINED SCHEDULES based on Official Vietlott Rules (VN Time)
@@ -80,51 +81,48 @@ const calculateVNTimeLeft = (target: Date, drawingLabel: string): string => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
-const UnifiedJackpotCarousel: React.FC<UnifiedJackpotCarouselProps> = ({ t }) => {
+const UnifiedJackpotCarousel: React.FC<UnifiedJackpotCarouselProps> = ({ t, data }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(true);
-    const [results, setResults] = useState<LottoResult[]>([]);
+    const [sortedResults, setSortedResults] = useState<LottoResult[]>([]);
     const [carouselData, setCarouselData] = useState<any[]>([]);
     const [timers, setTimers] = useState<Record<string, string>>({});
     const [targetDates, setTargetDates] = useState<Record<string, Date>>({});
     
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // 1. Fetch Live Data & Sort (Power > Mega > Lotto)
+    // 1. Process Passed Data & Sort (Power > Mega > Lotto)
     useEffect(() => {
-        const fetchData = async () => {
-            const data = await LottoService.fetchLiveLotteryData();
-            
-            const priorityMap: Record<string, number> = { 'power': 0, 'mega': 1, 'lotto': 2 };
-            const sortedData = [...data].sort((a, b) => {
-                return (priorityMap[a.id] ?? 99) - (priorityMap[b.id] ?? 99);
-            });
+        if (!data || data.length === 0) return;
 
-            setResults(sortedData);
+        const priorityMap: Record<string, number> = { 'power': 0, 'mega': 1, 'lotto': 2 };
+        const sorted = [...data].sort((a, b) => {
+            return (priorityMap[a.id] ?? 99) - (priorityMap[b.id] ?? 99);
+        });
+
+        setSortedResults(sorted);
+        
+        if (sorted.length > 0) {
+            setCarouselData([...sorted, { ...sorted[0], id: 'clone' }]);
             
-            if (sortedData.length > 0) {
-                setCarouselData([...sortedData, { ...sortedData[0], id: 'clone' }]);
-                
-                const targets: Record<string, Date> = {};
-                sortedData.forEach(r => {
-                    targets[r.id] = getNextDrawDate(r.id);
-                });
-                setTargetDates(targets);
-            }
-        };
-        fetchData();
-    }, []);
+            const targets: Record<string, Date> = {};
+            sorted.forEach(r => {
+                targets[r.id] = getNextDrawDate(r.id);
+            });
+            setTargetDates(targets);
+        }
+    }, [data]);
 
     // 2. Real-time Countdown Timer (Client-side calculation with VN Time)
     useEffect(() => {
-        if (results.length === 0) return;
+        if (sortedResults.length === 0) return;
 
         const updateTimers = () => {
             const newTimers: Record<string, string> = {};
             const newTargets = { ...targetDates };
             let needsUpdate = false;
 
-            results.forEach(game => {
+            sortedResults.forEach(game => {
                 let target = targetDates[game.id];
                 const vnNow = getVNTime();
                 
@@ -147,7 +145,7 @@ const UnifiedJackpotCarousel: React.FC<UnifiedJackpotCarouselProps> = ({ t }) =>
         updateTimers(); 
         const interval = setInterval(updateTimers, 1000);
         return () => clearInterval(interval);
-    }, [results, targetDates, t.home.jackpot.drawing]);
+    }, [sortedResults, targetDates, t.home.jackpot.drawing]);
 
     // 3. Carousel Autoplay
     useEffect(() => {
@@ -179,11 +177,14 @@ const UnifiedJackpotCarousel: React.FC<UnifiedJackpotCarouselProps> = ({ t }) =>
         : 0;
 
     // RENDER BALL LOGIC
-    const renderBalls = (gameId: string, numbers: string[], bonus: string | null) => {
+    const renderBalls = (gameId: string, numbers: string[], bonus: string | null | undefined) => {
+        // Fallback for empty numbers
+        if (!numbers || numbers.length === 0) return null;
+
         let displayNumbers = [...numbers];
         let displayBonus = bonus;
 
-        // Correct Split Logic based on Game Rules
+        // Correct Split Logic based on Game Rules if bonus not explicitly passed but potentially in array
         if (gameId === 'power') {
             // Power 6/55: 6 Main + 1 Bonus. If we have 7 numbers and no specific bonus, split it.
             if (displayNumbers.length === 7 && !displayBonus) {
@@ -216,7 +217,7 @@ const UnifiedJackpotCarousel: React.FC<UnifiedJackpotCarouselProps> = ({ t }) =>
         );
     };
 
-    if (results.length === 0) return <div className="w-full h-[220px] bg-gray-100 animate-pulse rounded-2xl"></div>;
+    if (sortedResults.length === 0) return <div className="w-full h-[220px] bg-gray-100 animate-pulse rounded-2xl"></div>;
 
     return (
         <section className="w-full">
@@ -284,7 +285,7 @@ const UnifiedJackpotCarousel: React.FC<UnifiedJackpotCarouselProps> = ({ t }) =>
                  
                  {/* Indicators */}
                  <div className="flex justify-center gap-1.5 mt-4">
-                     {results.map((_, idx) => (
+                     {sortedResults.map((_, idx) => (
                         <div 
                             key={idx} 
                             className={`h-1.5 rounded-full transition-all duration-300 ${

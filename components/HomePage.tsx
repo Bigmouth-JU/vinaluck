@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { History, ChevronRight, User, Calendar, Bot, Target, Lock, Sparkles, MessageSquare } from 'lucide-react';
 import UnifiedJackpotCarousel from './UnifiedJackpotCarousel';
 import DreamDecoder from './DreamDecoder';
@@ -7,6 +7,7 @@ import DailyLuck from './DailyLuck';
 import { GlobalTranslation, SavedTicket } from '../App';
 import { VinaLuckEngine } from '../utils/VinaLuckEngine';
 import { FateResult } from './FateCardModal';
+import { LottoResult } from '../services/lottoApi';
 
 interface HomePageProps {
     onZodiacSelect: (id: string, year?: number) => void;
@@ -20,6 +21,67 @@ interface HomePageProps {
     onShowFate: (result: FateResult) => void;
 }
 
+// OFFICIAL LAUNCH DATA (Hardcoded for Stability)
+const LAUNCH_DATA: LottoResult[] = [
+    {
+        id: 'mega',
+        name: "Mega 6/45",
+        drawId: "#01463",
+        drawDate: "28/01/2026",
+        jackpot: "14.712.500.000 VNĐ",
+        winningNumbers: ['04', '10', '16', '19', '27', '40'],
+        bonusNumber: null,
+        nextDrawTime: new Date().toISOString(),
+        theme: {
+            bg: "bg-[#ED1C24]",
+            borderColor: "border-red-500",
+            text: "text-white",
+            subText: "text-white/80",
+            jackpotColor: "text-[#F9D423]",
+            iconBg: "bg-white/20 border-white/20",
+            badgeBg: "bg-black/20 border-white/10"
+        }
+    },
+    {
+        id: 'power',
+        name: "Power 6/55",
+        drawId: "#01301",
+        drawDate: "27/01/2026",
+        jackpot: "32.706.781.950 VNĐ",
+        winningNumbers: ['13', '22', '32', '42', '53', '54'],
+        bonusNumber: '29',
+        nextDrawTime: new Date().toISOString(),
+        theme: {
+            bg: "bg-[linear-gradient(135deg,#F7C51D_0%,#F9D423_100%)]",
+            borderColor: "border-yellow-400",
+            text: "text-red-900",
+            subText: "text-red-800/80",
+            jackpotColor: "text-red-950",
+            iconBg: "bg-red-900/5 border-red-900/10",
+            badgeBg: "bg-red-900/10 border-red-900/10"
+        }
+    },
+    {
+        id: 'lotto',
+        name: "Lotto 5/35",
+        drawId: "#00422",
+        drawDate: "29/01/2026",
+        jackpot: "7.765.082.500 VNĐ",
+        winningNumbers: ['10', '13', '25', '31', '32'],
+        bonusNumber: '01',
+        nextDrawTime: new Date().toISOString(),
+        theme: {
+            bg: "bg-[#00A651]",
+            borderColor: "border-green-500",
+            text: "text-white",
+            subText: "text-white/80",
+            jackpotColor: "text-[#F9D423]",
+            iconBg: "bg-white/20 border-white/20",
+            badgeBg: "bg-black/20 border-white/10"
+        }
+    }
+];
+
 const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, savedCount, savedTickets, onNavigateToHistory, onOpenAiPick, lang, onShowFate }) => {
     
     // Fate Form State
@@ -31,6 +93,9 @@ const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, s
     const [time, setTime] = useState('unknown');
     const [topic, setTopic] = useState('money');
     const [specificConcern, setSpecificConcern] = useState(''); 
+
+    // Lottery Data State (Initialized with verified Launch Data)
+    const [lotteryData] = useState<LottoResult[]>(LAUNCH_DATA);
 
     // Get last 3 tickets
     const recentTickets = savedTickets.slice(0, 3);
@@ -67,7 +132,7 @@ const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, s
             {/* 2. TOP CONTENT: LOTTERY CAROUSEL */}
             {/* Added pb-20 to push content up so the overlapping sheet doesn't cover the carousel details */}
             <div className="relative z-10 w-full pt-4 pb-20">
-                <UnifiedJackpotCarousel t={t} />
+                <UnifiedJackpotCarousel t={t} data={lotteryData} />
             </div>
             
             {/* 3. OVERLAPPING CONTENT SHEET */}
