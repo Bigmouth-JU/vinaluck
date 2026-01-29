@@ -125,7 +125,8 @@ const LottoRecommendation: React.FC<LottoRecommendationProps> = ({ lang, seedNum
                             </div>
                         ))}
                         <div className="w-px h-6 bg-gray-300 mx-1"></div>
-                        <div className="w-9 h-9 rounded-full bg-[radial-gradient(circle_at_30%_25%,#facc15,#ca8a04)] shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.3),0_4px_6px_rgba(0,0,0,0.2)] border border-white/30 flex items-center justify-center text-white font-black text-sm">
+                        {/* UPDATE: Yellow Ball with Red Text */}
+                        <div className="w-9 h-9 rounded-full bg-[radial-gradient(circle_at_30%_25%,#facc15,#ca8a04)] shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.3),0_4px_6px_rgba(0,0,0,0.2)] border border-white/30 flex items-center justify-center text-red-900 font-black text-sm">
                             {results.lotto.special}
                         </div>
                     </div>
