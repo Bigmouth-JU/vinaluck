@@ -19,6 +19,8 @@ interface HomePageProps {
     onOpenAiPick: () => void;
     lang: 'vn' | 'en' | 'kr';
     onShowFate: (result: FateResult) => void;
+    onDreamSearch: (term: string) => void;
+    onNavigateToDream: () => void;
 }
 
 // OFFICIAL LAUNCH DATA (Hardcoded for Stability)
@@ -82,7 +84,19 @@ const LAUNCH_DATA: LottoResult[] = [
     }
 ];
 
-const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, savedCount, savedTickets, onNavigateToHistory, onOpenAiPick, lang, onShowFate }) => {
+const HomePage: React.FC<HomePageProps> = ({ 
+    onZodiacSelect, 
+    t, 
+    onShopeeClick, 
+    savedCount, 
+    savedTickets, 
+    onNavigateToHistory, 
+    onOpenAiPick, 
+    lang, 
+    onShowFate,
+    onDreamSearch,
+    onNavigateToDream
+}) => {
     
     // Fate Form State
     const [name, setName] = useState('');
@@ -143,7 +157,7 @@ const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, s
                 <DailyLuck onZodiacSelect={onZodiacSelect} t={t} onShopeeClick={onShopeeClick} />
 
                 {/* B. DREAM DECODER */}
-                <DreamDecoder t={t} />
+                <DreamDecoder t={t} onSearch={onDreamSearch} onNavigate={onNavigateToDream} />
 
                 {/* C. FATE INPUT FORM (Moved to bottom as requested) */}
                 <section>

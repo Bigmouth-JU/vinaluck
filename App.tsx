@@ -157,9 +157,9 @@ const MASTER_TRANSLATIONS = {
             targeting: "ĐANG NGẮM MỤC TIÊU...",
             locked: "ĐÃ KHÓA MỤC TIÊU",
             result: "KẾT QUẢ AI",
-            retry: "Bắn Lại",
-            save: "Lưu Vé",
-            jackpot_chance: "Tỷ lệ Jackpot: Cao"
+            retry: "Re-scan",
+            save: "Save Ticket",
+            jackpot_chance: "Jackpot Chance: High"
         }
     },
     en: {
@@ -625,6 +625,8 @@ const App: React.FC = () => {
                       onOpenAiPick={handleOpenAiPick}
                       lang={lang}
                       onShowFate={handleShowFate}
+                      onDreamSearch={handleDreamSearch}
+                      onNavigateToDream={() => handleTabChange('dream')}
                   />
               );
           case 'fortune':
