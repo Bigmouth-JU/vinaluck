@@ -94,7 +94,8 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, data, t 
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in sm:p-4 overflow-hidden">
+        // Changed to absolute inset-0 z-[60] to overlay on top of everything inside the frame
+        <div className="absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in sm:p-4 overflow-hidden">
             
             {/* CLOSE BUTTON (Only visible when result is open, moved to safe area) */}
             {stage === 'open' && (

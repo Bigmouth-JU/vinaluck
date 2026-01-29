@@ -6,7 +6,7 @@ import DreamDecoder from './DreamDecoder';
 import DailyLuck from './DailyLuck';
 import { GlobalTranslation, SavedTicket } from '../App';
 import { VinaLuckEngine } from '../utils/VinaLuckEngine';
-import FateCardModal, { FateResult } from './FateCardModal';
+import { FateResult } from './FateCardModal';
 
 interface HomePageProps {
     onZodiacSelect: (id: string, year?: number) => void;
@@ -17,9 +17,10 @@ interface HomePageProps {
     onNavigateToHistory: () => void;
     onOpenAiPick: () => void;
     lang: 'vn' | 'en' | 'kr';
+    onShowFate: (result: FateResult) => void;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, savedCount, savedTickets, onNavigateToHistory, onOpenAiPick, lang }) => {
+const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, savedCount, savedTickets, onNavigateToHistory, onOpenAiPick, lang, onShowFate }) => {
     
     // Fate Form State
     const [name, setName] = useState('');
@@ -30,9 +31,6 @@ const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, s
     const [time, setTime] = useState('unknown');
     const [topic, setTopic] = useState('money');
     const [specificConcern, setSpecificConcern] = useState(''); 
-    
-    const [fateResult, setFateResult] = useState<FateResult | null>(null);
-    const [isFateModalOpen, setIsFateModalOpen] = useState(false);
 
     // Get last 3 tickets
     const recentTickets = savedTickets.slice(0, 3);
@@ -56,14 +54,12 @@ const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, s
         if (!name.trim()) {
             return;
         }
-        // Updated to pass language
         const result = VinaLuckEngine.analyzeFate(name, gender, day, month, year, time, topic, specificConcern, lang);
-        setFateResult(result);
-        setIsFateModalOpen(true);
+        onShowFate(result);
     };
 
     return (
-        <main className="flex flex-col w-full animate-fade-in bg-[#F5F7FA] min-h-screen relative">
+        <main className="flex flex-col w-full animate-fade-in bg-[#F5F7FA] min-h-full relative">
             
             {/* 1. HERO BACKGROUND LAYER (Absolute) */}
             <div className="absolute top-0 left-0 w-full h-[500px] bg-[#D02622] z-0" />
@@ -291,31 +287,22 @@ const HomePage: React.FC<HomePageProps> = ({ onZodiacSelect, t, onShopeeClick, s
                             ))}
                         </div>
                     ) : (
-                        <div className="bg-white rounded-xl p-6 border border-dashed border-gray-200 flex flex-col items-center justify-center text-center gap-2">
-                             <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary/40 mb-1">
+                        <div className="bg-white rounded-xl p-6 border border-dashed border-gray-200 flex flex-col items-center justify-center text-center gap-2 mt-4">
+                            <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center text-primary/40 mb-1">
                                 <Bot size={24} />
-                             </div>
-                             <p className="text-[10px] text-gray-400 font-medium">{t.home.noTickets}</p>
-                             <button 
+                            </div>
+                            <p className="text-[10px] text-gray-400 font-medium">{t.home.noTickets}</p>
+                            <button 
                                 onClick={onOpenAiPick}
                                 className="mt-1 flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold px-4 py-2 rounded-full text-xs transition-colors active:scale-95"
-                             >
-                                 <Target size={14} />
-                                 <span>{t.home.trySim}</span>
-                             </button>
+                            >
+                                <Target size={14} />
+                                <span>{t.home.trySim}</span>
+                            </button>
                         </div>
                     )}
                 </section>
             </div>
-
-            {/* Fate Modal */}
-            <FateCardModal 
-                isOpen={isFateModalOpen}
-                onClose={() => setIsFateModalOpen(false)}
-                data={fateResult}
-                t={t}
-            />
-
         </main>
     );
 };

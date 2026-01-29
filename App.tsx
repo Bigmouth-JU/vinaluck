@@ -10,6 +10,7 @@ import BottomNav from './components/BottomNav';
 import AiModal from './components/AiModal';
 import DailyFortuneModal from './components/DailyFortuneModal';
 import DreamResultModal from './components/DreamResultModal';
+import FateCardModal, { FateResult } from './components/FateCardModal';
 import { IMAGES, FORTUNE_DATA } from './constants';
 import { ZodiacFortune, DreamInterpretation } from './types';
 import { VinaLuckEngine } from './utils/VinaLuckEngine';
@@ -142,7 +143,7 @@ const MASTER_TRANSLATIONS = {
             badOmen: "Điềm Xấu",
             direction: "Phương hướng",
             bestTime: "Giờ tốt",
-            advice: "Lời khuyên",
+            advice: "Daily Advice",
             boostLuck: "Tăng vận may với màu sắc hôm nay",
             shopOn: "Mua ngay trên"
         },
@@ -294,13 +295,13 @@ const MASTER_TRANSLATIONS = {
         aiPick: {
             title: "AI Number Sniper",
             subtitle: "Select a lottery type for AI target acquisition.",
-            select_game: "SELECT MODE",
+            select_game: "CHỌN CHẾ ĐỘ",
             mega: "Mega 6/45",
             power: "Power 6/55",
             lotto: "Lotto 5/35",
-            targeting: "ACQUIRING TARGET...",
-            locked: "TARGET LOCKED",
-            result: "AI RESULT",
+            targeting: "ĐANG NGẮM MỤC TIÊU...",
+            locked: "ĐÃ KHÓA MỤC TIÊU",
+            result: "KẾT QUẢ AI",
             retry: "Re-scan",
             save: "Save Ticket",
             jackpot_chance: "Jackpot Chance: High"
@@ -455,6 +456,7 @@ const MASTER_TRANSLATIONS = {
 
 export type GlobalTranslation = typeof MASTER_TRANSLATIONS['vn'];
 type Tab = 'home' | 'fortune' | 'dream' | 'menu';
+type ViewState = 'MAIN' | 'FORTUNE_DETAIL' | 'DREAM_DETAIL' | 'AI_SNIPER' | 'FATE_DETAIL';
 
 // Exported for use in MenuPage
 export interface SavedTicket {
@@ -477,9 +479,13 @@ const Toast = ({ message, show }: { message: string; show: boolean }) => (
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [currentView, setCurrentView] = useState<ViewState>('MAIN');
+  
+  // Data States
   const [selectedFortune, setSelectedFortune] = useState<ZodiacFortune | null>(null);
   const [selectedDream, setSelectedDream] = useState<DreamInterpretation | null>(null);
+  const [fateResult, setFateResult] = useState<FateResult | null>(null);
+  const [isFateModalOpen, setIsFateModalOpen] = useState(false);
   
   // Track selected Zodiac for Dynamic Destiny (can be undefined if not selected)
   const [userZodiacId, setUserZodiacId] = useState<string | undefined>(undefined);
@@ -545,18 +551,23 @@ const App: React.FC = () => {
   const fontClass = lang === 'vn' ? 'font-vn' : lang === 'kr' ? 'font-kr' : 'font-en';
 
   const handleZodiacSelect = (zodiacId: string, year?: number) => {
-      setUserZodiacId(zodiacId); // Set global user zodiac context
-      setUserBirthYear(year);    // Set global birth year context (if provided)
+      setUserZodiacId(zodiacId); 
+      setUserBirthYear(year);    
       
       if (FORTUNE_DATA[zodiacId]) {
           setSelectedFortune(FORTUNE_DATA[zodiacId]);
+          setCurrentView('FORTUNE_DETAIL');
       }
   };
 
   const handleDreamSearch = (term: string) => {
-      // Use the Engine to generate a completely dynamic dream interpretation
       const dynamicResult = VinaLuckEngine.interpretDream(term);
       setSelectedDream(dynamicResult);
+      setCurrentView('DREAM_DETAIL');
+  };
+
+  const handleOpenAiPick = () => {
+      setCurrentView('AI_SNIPER');
   };
 
   // Shopee Click Handler
@@ -569,6 +580,11 @@ const App: React.FC = () => {
       setTimeout(() => setShowToast(false), 3000);
   };
 
+  const handleShowFate = (result: FateResult) => {
+      setFateResult(result);
+      setIsFateModalOpen(true);
+  };
+
   // Navigate to History Details in Menu Tab
   const handleNavigateToHistory = () => {
       setMenuView('history');
@@ -577,11 +593,15 @@ const App: React.FC = () => {
 
   // Navigation Handler
   const handleTabChange = (tab: Tab) => {
-      // If clicking Menu tab directly, reset to main menu list
       if (tab === 'menu') {
           setMenuView('menu');
       }
       setActiveTab(tab);
+      setCurrentView('MAIN'); // Ensure we are on main view when switching tabs
+  };
+
+  const handleBackToMain = () => {
+      setCurrentView('MAIN');
   };
 
   const getSeedNumbers = (): string[] => {
@@ -591,7 +611,7 @@ const App: React.FC = () => {
       return [];
   };
 
-  const renderContent = () => {
+  const renderTabContent = () => {
       switch (activeTab) {
           case 'home':
               return (
@@ -602,7 +622,9 @@ const App: React.FC = () => {
                       savedCount={savedTickets.length} 
                       savedTickets={savedTickets}
                       onNavigateToHistory={handleNavigateToHistory}
-                      onOpenAiPick={() => setIsAiModalOpen(true)}
+                      onOpenAiPick={handleOpenAiPick}
+                      lang={lang}
+                      onShowFate={handleShowFate}
                   />
               );
           case 'fortune':
@@ -612,24 +634,13 @@ const App: React.FC = () => {
           case 'menu':
               return <MenuPage t={t} savedTickets={savedTickets} onReset={handleResetHistory} initialView={menuView} />;
           default:
-              return (
-                  <HomePage 
-                      onZodiacSelect={handleZodiacSelect} 
-                      t={t} 
-                      onShopeeClick={handleShopeeClick} 
-                      savedCount={savedTickets.length} 
-                      savedTickets={savedTickets}
-                      onNavigateToHistory={handleNavigateToHistory}
-                      onOpenAiPick={() => setIsAiModalOpen(true)}
-                  />
-              );
+              return null;
       }
   };
 
   const getHeaderProps = () => {
       switch (activeTab) {
           case 'home':
-              // Hardcoded VinaLuck, Translated Subtitle
               return { title: "VinaLuck", subtitle: t.header.homeSub };
           case 'fortune':
               return { title: t.header.fortuneTitle, subtitle: t.header.fortuneSub };
@@ -669,54 +680,84 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Right App Simulation Side */}
+      {/* Right App Simulation Side - MOBILE CONTAINER */}
       <div className="w-full lg:w-1/2 bg-white lg:bg-slate-50 flex items-center justify-center relative">
-        <div className="w-full h-[100dvh] lg:h-[850px] lg:max-w-md bg-background-light relative flex flex-col lg:rounded-3xl lg:shadow-2xl overflow-hidden ring-1 ring-black/5">
+        <div className="relative flex flex-col h-[100dvh] w-full max-w-md mx-auto bg-gray-50 overflow-hidden lg:h-[850px] lg:rounded-3xl lg:shadow-2xl lg:ring-1 lg:ring-black/5">
           
-          <Header 
-            {...getHeaderProps()} 
-            currentLang={lang} 
-            onLangChange={setLang}
-          />
+          {/* Main Content Wrapper - Controls Visibility of Main Views */}
+          <div className={`absolute inset-0 flex flex-col transition-transform duration-300 ${currentView !== 'MAIN' ? '-translate-x-1/4 opacity-0 pointer-events-none' : 'translate-x-0 opacity-100'}`}>
+              
+              <Header 
+                {...getHeaderProps()} 
+                currentLang={lang} 
+                onLangChange={setLang}
+              />
 
-          <div className="flex-1 overflow-y-auto no-scrollbar pb-32 w-full bg-background-light">
-            {renderContent()}
+              {/* Scrollable Content Area: Flex-1 fills space, PB-32 protects bottom content */}
+              <div className="flex-1 overflow-y-auto no-scrollbar pb-32 w-full bg-[#F5F7FA] z-0 relative">
+                {renderTabContent()}
+              </div>
+
+              {/* Fixed Bottom Navigation: Absolute to bottom of the 100dvh container */}
+              <BottomNav 
+                  activeTab={activeTab} 
+                  onTabChange={handleTabChange} 
+                  onAiPickClick={handleOpenAiPick} 
+                  t={t}
+              />
           </div>
 
-          <BottomNav 
-              activeTab={activeTab} 
-              onTabChange={handleTabChange} 
-              onAiPickClick={() => setIsAiModalOpen(true)} 
+          {/* Layer 2: Full Screen Detail Views (In-Frame) */}
+          
+          {/* AI Sniper View */}
+          {currentView === 'AI_SNIPER' && (
+              <div className="absolute inset-0 z-50 animate-fade-in bg-white">
+                  <AiModal 
+                    isOpen={true} 
+                    onBack={handleBackToMain} 
+                    t={t}
+                    seedNumbers={getSeedNumbers()}
+                    onSave={handleSaveTicket}
+                  />
+              </div>
+          )}
+          
+          {/* Fortune Detail View */}
+          {currentView === 'FORTUNE_DETAIL' && (
+             <div className="absolute inset-0 z-50 animate-fade-in bg-white">
+                  <DailyFortuneModal 
+                    isOpen={true} 
+                    onBack={handleBackToMain} 
+                    data={selectedFortune} 
+                    birthYear={userBirthYear}
+                    t={t}
+                    lang={lang}
+                    onShopeeClick={handleShopeeClick}
+                  />
+             </div>
+          )}
+
+          {/* Dream Detail View */}
+          {currentView === 'DREAM_DETAIL' && (
+             <div className="absolute inset-0 z-50 animate-fade-in bg-white">
+                  <DreamResultModal 
+                    isOpen={true} 
+                    onBack={handleBackToMain} 
+                    data={selectedDream}
+                    userZodiacId={userZodiacId}
+                    t={t}
+                    lang={lang}
+                    onShopeeClick={handleShopeeClick}
+                  />
+             </div>
+          )}
+          
+          {/* Fate Modal - Lifted to App level for correct viewport coverage */}
+          <FateCardModal 
+              isOpen={isFateModalOpen}
+              onClose={() => setIsFateModalOpen(false)}
+              data={fateResult}
               t={t}
-          />
-          
-          {/* AI Sniper Game (AiModal) */}
-          <AiModal 
-            isOpen={isAiModalOpen} 
-            onClose={() => setIsAiModalOpen(false)} 
-            t={t}
-            seedNumbers={getSeedNumbers()}
-            onSave={handleSaveTicket}
-          />
-          
-          {/* Result Modals */}
-          <DailyFortuneModal 
-            isOpen={!!selectedFortune} 
-            onClose={() => setSelectedFortune(null)} 
-            data={selectedFortune} 
-            birthYear={userBirthYear} // Pass year to modal
-            t={t}
-            lang={lang}
-            onShopeeClick={handleShopeeClick}
-          />
-          <DreamResultModal 
-            isOpen={!!selectedDream} 
-            onClose={() => setSelectedDream(null)} 
-            data={selectedDream}
-            userZodiacId={userZodiacId}
-            t={t}
-            lang={lang}
-            onShopeeClick={handleShopeeClick}
           />
 
         </div>

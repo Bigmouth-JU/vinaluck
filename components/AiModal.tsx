@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { RefreshCw, Save, Target, X, Trophy, Sparkles, Zap } from 'lucide-react';
+import { RefreshCw, Save, Target, X, Trophy, Sparkles, Zap, ArrowLeft } from 'lucide-react';
 import { GlobalTranslation } from '../App';
 
 interface AiModalProps {
     isOpen: boolean;
-    onClose: () => void;
+    onBack: () => void;
     t: GlobalTranslation;
     seedNumbers?: string[];
     onSave: (data: { type: string; numbers: string[]; special?: string | null }) => void;
@@ -14,7 +14,7 @@ interface AiModalProps {
 type Step = 'select' | 'result';
 type GameType = 'mega' | 'power' | 'lotto';
 
-const AiModal: React.FC<AiModalProps> = ({ isOpen, onClose, t, onSave }) => {
+const AiModal: React.FC<AiModalProps> = ({ isOpen, onBack, t, onSave }) => {
     const [step, setStep] = useState<Step>('select');
     const [selectedGame, setSelectedGame] = useState<GameType>('mega');
     
@@ -107,23 +107,26 @@ const AiModal: React.FC<AiModalProps> = ({ isOpen, onClose, t, onSave }) => {
             numbers: finalData.numbers,
             special: finalData.special
         });
-        onClose();
+        onBack();
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 transition-all animate-fade-in">
-            <div className="absolute inset-0 bg-black/90 backdrop-blur-sm cursor-pointer" onClick={isSpinning ? undefined : onClose}></div>
+        // Changed to absolute inset-0 to fill parent container
+        <div className="absolute inset-0 z-50 flex flex-col bg-gray-900 overflow-hidden animate-slide-in-right">
+            
+            {/* Header/Close Button - Disabled during spin */}
+            {!isSpinning && (
+                <button 
+                    onClick={onBack} 
+                    className="absolute top-4 left-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors z-50"
+                >
+                    <ArrowLeft size={20} />
+                </button>
+            )}
 
-            <div className="relative w-full max-w-md bg-gray-900 border border-gray-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col min-h-[500px]">
-                {/* Close Button - Disabled during spin */}
-                {!isSpinning && (
-                    <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-white z-50">
-                        <X size={24} />
-                    </button>
-                )}
-
+            <div className="flex-1 flex flex-col relative">
                 {/* --- STEP 1: SELECT GAME --- */}
                 {step === 'select' && (
                     <div className="flex flex-col items-center justify-center flex-1 p-8 gap-6 animate-fade-in">
@@ -156,7 +159,7 @@ const AiModal: React.FC<AiModalProps> = ({ isOpen, onClose, t, onSave }) => {
 
                 {/* --- STEP 2: RESULT & SPIN --- */}
                 {step === 'result' && (
-                    <div className="flex flex-col items-center justify-center flex-1 p-6 gap-6 animate-fade-in bg-gradient-to-b from-gray-900 to-black">
+                    <div className="flex flex-col items-center justify-center flex-1 p-6 gap-6 animate-fade-in bg-gradient-to-b from-gray-900 to-black h-full">
                         
                         {/* Status Header */}
                         <div className={`flex items-center gap-2 mb-2 transition-colors ${isSpinning ? 'text-yellow-400' : 'text-primary'}`}>
