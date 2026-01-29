@@ -138,10 +138,10 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                     <section className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col items-center gap-5">
                         {/* Image Badge */}
                         <div className="relative">
-                            <div className="w-40 h-40 bg-gray-50 rounded-full border-[6px] border-white shadow-[0_0_20px_rgba(0,0,0,0.05)] flex items-center justify-center p-4">
+                            <div className="w-40 h-40 bg-gray-50 rounded-full border-[6px] border-white shadow-[0_0_20px_rgba(0,0,0,0.05)] flex items-center justify-center overflow-hidden">
                                 <img 
                                     alt={data.name} 
-                                    className="w-full h-full object-contain drop-shadow-lg" 
+                                    className="w-full h-full object-cover" 
                                     src={data.image} 
                                 />
                             </div>

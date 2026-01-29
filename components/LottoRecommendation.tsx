@@ -54,7 +54,7 @@ const LottoRecommendation: React.FC<LottoRecommendationProps> = ({ lang, seedNum
     const [isAdPlaying, setIsAdPlaying] = useState(false);
     const [internalRefresh, setInternalRefresh] = useState(0);
     const [results, setResults] = useState<{
-        lotto: string[];
+        lotto: { main: string[]; special: string };
         mega: string[];
         power: { main: string[]; special: string };
     } | null>(null);
@@ -67,7 +67,10 @@ const LottoRecommendation: React.FC<LottoRecommendationProps> = ({ lang, seedNum
 
         // Use the Engine to generate smart numbers based on seeds
         setResults({
-            lotto: VinaLuckEngine.generateSmartLotto('lotto', seedNumbers),
+            lotto: {
+                main: VinaLuckEngine.generateSmartLotto('lotto', seedNumbers),
+                special: Math.floor(Math.random() * 35 + 1).toString().padStart(2, '0')
+            },
             mega: VinaLuckEngine.generateSmartLotto('mega', seedNumbers),
             power: {
                 main: VinaLuckEngine.generateSmartLotto('power', seedNumbers),
@@ -111,7 +114,7 @@ const LottoRecommendation: React.FC<LottoRecommendationProps> = ({ lang, seedNum
                         <span className="text-[10px] font-bold bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded uppercase">{t.free}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        {results.lotto.map((num, i) => (
+                        {results.lotto.main.map((num, i) => (
                             <div 
                                 key={i} 
                                 className={`w-9 h-9 rounded-full shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.3),0_4px_6px_rgba(0,0,0,0.2)] border border-white/30 flex items-center justify-center text-white font-black text-sm ${
@@ -121,6 +124,10 @@ const LottoRecommendation: React.FC<LottoRecommendationProps> = ({ lang, seedNum
                                 {num}
                             </div>
                         ))}
+                        <div className="w-px h-6 bg-gray-300 mx-1"></div>
+                        <div className="w-9 h-9 rounded-full bg-[radial-gradient(circle_at_30%_25%,#facc15,#ca8a04)] shadow-[inset_-2px_-2px_4px_rgba(0,0,0,0.3),0_4px_6px_rgba(0,0,0,0.2)] border border-white/30 flex items-center justify-center text-white font-black text-sm">
+                            {results.lotto.special}
+                        </div>
                     </div>
                 </div>
 
