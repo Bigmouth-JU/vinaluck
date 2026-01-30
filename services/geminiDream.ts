@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
 export interface GeminiDreamResponse {
@@ -10,13 +9,16 @@ export interface GeminiDreamResponse {
 
 export const GeminiDreamService = {
     interpretDream: async (dreamText: string, emotion: string, lang: 'vn' | 'en' | 'kr'): Promise<GeminiDreamResponse | null> => {
-        // The API key must be obtained exclusively from the environment variable process.env.API_KEY
-        if (!process.env.API_KEY) {
-            console.warn("Gemini API Key missing. Falling back to local engine.");
+
+        // 🚨 [수정 핵심] process.env 대신 import.meta.env 사용 (이게 없어서 안 됐던 겁니다!)
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+        if (!apiKey) {
+            console.warn("❌ Gemini API Key missing. Check .env or Vercel settings.");
             return null;
         }
 
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const ai = new GoogleGenAI({ apiKey: apiKey });
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
         if (lang === 'kr') langInstruction = "Language: Korean (한국어). Tone: Natural, polite, mystical.";
@@ -36,6 +38,7 @@ export const GeminiDreamService = {
 
         try {
             const response = await ai.models.generateContent({
+                // ✅ 기획자님이 선택하신 최신 모델 그대로 사용
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
                 config: {
@@ -43,22 +46,22 @@ export const GeminiDreamService = {
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
-                            summary: { 
-                                type: Type.STRING, 
-                                description: "One sentence summary (e.g., 'Điềm báo về tài lộc sắp đến.')" 
+                            summary: {
+                                type: Type.STRING,
+                                description: "One sentence summary (e.g., 'Điềm báo về tài lộc sắp đến.')"
                             },
-                            detailed_analysis: { 
-                                type: Type.STRING, 
-                                description: "Deep cultural analysis explaining why this dream is good/bad based on the emotion. Use mystical but comforting tone." 
+                            detailed_analysis: {
+                                type: Type.STRING,
+                                description: "Deep cultural analysis explaining why this dream is good/bad based on the emotion. Use mystical but comforting tone."
                             },
-                            lucky_numbers: { 
-                                type: Type.ARRAY, 
+                            lucky_numbers: {
+                                type: Type.ARRAY,
                                 items: { type: Type.STRING },
                                 description: "List of lucky numbers as strings (e.g. ['10', '25'])"
                             },
-                            action_advice: { 
-                                type: Type.STRING, 
-                                description: "Specific advice for today (e.g., Be careful with fire, buy a lottery ticket ending in 7)." 
+                            action_advice: {
+                                type: Type.STRING,
+                                description: "Specific advice for today (e.g., Be careful with fire, buy a lottery ticket ending in 7)."
                             }
                         },
                         required: ["summary", "detailed_analysis", "lucky_numbers", "action_advice"]
@@ -66,7 +69,9 @@ export const GeminiDreamService = {
                 }
             });
 
-            const textResponse = response.text;
+            // 안전한 텍스트 추출 (혹시 모를 SDK 호환성 이슈 방지)
+            const textResponse = typeof response.text === 'function' ? response.text() : response.text;
+
             if (!textResponse) return null;
 
             return JSON.parse(textResponse) as GeminiDreamResponse;

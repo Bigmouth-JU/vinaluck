@@ -1,6 +1,6 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
+// 인터페이스 정의
 export interface GeminiSajuResponse {
     element_analysis: string;
     main_prediction: string;
@@ -21,12 +21,17 @@ export const GeminiSajuService = {
         userQuestion: string,
         lang: 'vn' | 'en' | 'kr'
     ): Promise<GeminiSajuResponse | null> => {
-        if (!process.env.API_KEY) {
-            console.warn("Gemini API Key missing.");
+
+        // 🔑 [핵심 수정] Vite 환경에 맞는 API 키 가져오기
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+        if (!apiKey) {
+            console.error("❌ API 키가 없습니다. .env 파일을 확인하거나 버셀 설정을 확인하세요.");
             return null;
         }
 
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        // SDK 초기화
+        const ai = new GoogleGenAI({ apiKey: apiKey });
         const currentDate = new Date().toLocaleDateString('vi-VN');
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
@@ -47,8 +52,7 @@ export const GeminiSajuService = {
         
         **Instructions:**
         1. **Analyze:** Briefly calculate the Balance of Five Elements (Ngũ Hành) based on the birth date. Determine the "Day Master" (Nhật Chủ) if possible.
-        2. **Interpretation:** 
-           - If "User's Specific Worry" is provided, answer it directly using the element analysis.
+        2. **Interpretation:** - If "User's Specific Worry" is provided, answer it directly using the element analysis.
            - If it is empty, provide a detailed prediction about the '${category}' for the current year/month.
         3. **Tone:** Mystical, profound, empathetic, but clear. Use metaphors of nature (e.g., 'Like a big tree needing water', 'Like a fire burning too hot').
         4. **Language:** ${langInstruction}
@@ -58,6 +62,7 @@ export const GeminiSajuService = {
         `;
 
         try {
+            // 🚀 [모델 수정] 기획자님이 원하신 최신 3.0 모델 적용!
             const response = await ai.models.generateContent({
                 model: 'gemini-3-flash-preview',
                 contents: prompt,
@@ -66,25 +71,25 @@ export const GeminiSajuService = {
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
-                            element_analysis: { 
-                                type: Type.STRING, 
-                                description: "Briefly describe their dominant element." 
+                            element_analysis: {
+                                type: Type.STRING,
+                                description: "Briefly describe their dominant element."
                             },
-                            main_prediction: { 
-                                type: Type.STRING, 
-                                description: "Deep, metaphorical storytelling answering their worry or predicting the category topic. (3-4 sentences)" 
+                            main_prediction: {
+                                type: Type.STRING,
+                                description: "Deep, metaphorical storytelling answering their worry or predicting the category topic. (3-4 sentences)"
                             },
-                            advice: { 
-                                type: Type.STRING, 
-                                description: "Specific action advice for the next month." 
+                            advice: {
+                                type: Type.STRING,
+                                description: "Specific action advice for the next month."
                             },
-                            lucky_direction: { 
-                                type: Type.STRING, 
-                                description: "Best direction (e.g., Đông Nam)." 
+                            lucky_direction: {
+                                type: Type.STRING,
+                                description: "Best direction (e.g., Đông Nam)."
                             },
-                            lucky_color: { 
-                                type: Type.STRING, 
-                                description: "Lucky color name." 
+                            lucky_color: {
+                                type: Type.STRING,
+                                description: "Lucky color name."
                             }
                         },
                         required: ["element_analysis", "main_prediction", "advice", "lucky_direction", "lucky_color"]
@@ -92,13 +97,14 @@ export const GeminiSajuService = {
                 }
             });
 
-            const textResponse = response.text;
+            // 응답 처리 (안전하게 텍스트 추출)
+            const textResponse = typeof response.text === 'function' ? response.text() : response.text;
             if (!textResponse) return null;
 
             return JSON.parse(textResponse) as GeminiSajuResponse;
 
         } catch (error) {
-            console.error("Failed to fetch Saju analysis:", error);
+            console.error("❌ 사주 분석 실패:", error);
             return null;
         }
     }
