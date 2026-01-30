@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 
 export interface GeminiFortuneResponse {
@@ -7,7 +6,7 @@ export interface GeminiFortuneResponse {
     health: string;
     career: string;
     love: string;
-    lucky_number: string; // e.g., "09, 82"
+    lucky_number: string;
     lucky_color: string;
     lucky_time: string;
     action_advice: string;
@@ -21,8 +20,10 @@ export const GeminiFortuneService = {
         zodiac: string,
         lang: 'vn' | 'en' | 'kr'
     ): Promise<GeminiFortuneResponse | null> => {
+        
+        // Use process.env.API_KEY as per environment requirements
         if (!process.env.API_KEY) {
-            console.warn("Gemini API Key missing.");
+            console.warn("❌ API Key missing.");
             return null;
         }
 
@@ -30,64 +31,47 @@ export const GeminiFortuneService = {
         const today = new Date().toLocaleDateString('vi-VN');
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
-        if (lang === 'kr') langInstruction = "Language: Korean (한국어). Tone: Natural, polite, mystical.";
-        if (lang === 'en') langInstruction = "Language: English. Tone: Mystical.";
+        if (lang === 'kr') langInstruction = "Language: Korean (한국어).";
+        if (lang === 'en') langInstruction = "Language: English.";
 
         const prompt = `
-        Role:
-        You are "Thầy Phong Thủy" (Feng Shui Master), a respected 80-year-old sage.
-        Do not speak like a machine. Use deep, literary, and metaphorical language to interpret the user's fortune.
-        
+        Role: Feng Shui Master (80yo sage).
+        User: ${name} (${gender}), DOB: ${dob.day}/${dob.month}/${dob.year}, Zodiac: ${zodiac}. Date: ${today}.
         ${langInstruction}
-
-        User Info:
-        - Name: ${name}
-        - Gender: ${gender === 'male' ? 'Nam' : 'Nữ'}
-        - Date of Birth: ${dob.day}/${dob.month}/${dob.year} at ${dob.hour}:00
-        - Zodiac Sign: ${zodiac}
-        - Current Date: ${today}
-
-        Instructions:
-        1. **Storytelling:** Do not just say "Good" or "Bad". Explain "Why" using the Five Elements (Ngũ Hành) and nature metaphors (e.g., "Like rain after a drought...").
-        2. **Specifics:** Give specific actionable advice, not abstract concepts.
-        3. **Flow:** Mention the interaction between the user's birth data/gender and today's date (Heavenly Stems/Earthly Branches).
-        4. **Tone:** Mystical, warm, encouraging, but wise.
-
-        Output Requirement:
-        Return ONLY valid JSON matching the schema below. NO Markdown formatting.
+        Task: Daily fortune with metaphors. 
+        Return ONLY valid JSON.
         `;
 
         try {
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-3-flash-preview', 
                 contents: prompt,
                 config: {
                     responseMimeType: 'application/json',
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
-                            score: { type: Type.INTEGER, description: "Score from 0 to 100" },
-                            summary: { type: Type.STRING, description: "2-3 sentences poetic summary of the day" },
-                            health: { type: Type.STRING, description: "Detailed storytelling about health based on elements" },
-                            career: { type: Type.STRING, description: "Detailed storytelling about career/study" },
-                            love: { type: Type.STRING, description: "Detailed storytelling about love/relationships considering gender" },
-                            lucky_number: { type: Type.STRING, description: "Two lucky numbers, e.g., '09, 82'" },
-                            lucky_color: { type: Type.STRING, description: "Lucky color name" },
-                            lucky_time: { type: Type.STRING, description: "Lucky time range, e.g., '09:00 - 11:00'" },
-                            action_advice: { type: Type.STRING, description: "One specific action to do today" }
+                            score: { type: Type.INTEGER },
+                            summary: { type: Type.STRING },
+                            health: { type: Type.STRING },
+                            career: { type: Type.STRING },
+                            love: { type: Type.STRING },
+                            lucky_number: { type: Type.STRING },
+                            lucky_color: { type: Type.STRING },
+                            lucky_time: { type: Type.STRING },
+                            action_advice: { type: Type.STRING }
                         },
                         required: ["score", "summary", "health", "career", "love", "lucky_number", "lucky_color", "lucky_time", "action_advice"]
                     }
                 }
             });
 
+            // Handle potential difference in text access method
             const textResponse = response.text;
             if (!textResponse) return null;
-
             return JSON.parse(textResponse) as GeminiFortuneResponse;
-
         } catch (error) {
-            console.error("Failed to fetch fortune analysis:", error);
+            console.error("❌ Fortune Error:", error);
             return null;
         }
     }
