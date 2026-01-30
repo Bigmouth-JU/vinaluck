@@ -21,15 +21,20 @@ export const GeminiFortuneService = {
         lang: 'vn' | 'en' | 'kr'
     ): Promise<GeminiFortuneResponse | null> => {
         
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = process.env.API_KEY;
+
+        if (!apiKey) {
+            console.warn("❌ API_KEY is missing.");
+            return null;
+        }
+
+        const ai = new GoogleGenAI({ apiKey: apiKey });
         const today = new Date().toLocaleDateString('vi-VN');
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
         if (lang === 'kr') langInstruction = "Language: Korean (한국어).";
         if (lang === 'en') langInstruction = "Language: English.";
 
-        // ENHANCED PROMPT: Force lengthy, detailed storytelling
-        // We explicitly tell the AI to be talkative and use specific metaphors.
         const prompt = `
         IMPORTANT: You are a Talkative, Mystical 80-year-old Feng Shui Master. 
         Your answers must be LONG and DETAILED. Never be brief.
@@ -67,12 +72,22 @@ export const GeminiFortuneService = {
                             action_advice: { type: Type.STRING, description: "One specific, mystical actionable tip." }
                         },
                         required: ["score", "summary", "health", "career", "love", "lucky_number", "lucky_color", "lucky_time", "action_advice"]
-                    }
+                    },
+                    safetySettings: [
+                        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+                    ]
                 }
             });
 
-            const textResponse = response.text;
+            let textResponse = response.text;
             if (!textResponse) return null;
+
+            // Clean Markdown (```json ... ```)
+            textResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
+
             return JSON.parse(textResponse) as GeminiFortuneResponse;
         } catch (error) {
             console.error("❌ Fortune Error:", error);

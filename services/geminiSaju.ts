@@ -23,7 +23,14 @@ export const GeminiSajuService = {
         
         console.log("Saju Service Started");
         
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = process.env.API_KEY;
+
+        if (!apiKey) {
+            console.error("❌ API_KEY is missing.");
+            return null;
+        }
+
+        const ai = new GoogleGenAI({ apiKey: apiKey });
         const currentDate = new Date().toLocaleDateString('vi-VN');
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
@@ -60,12 +67,22 @@ export const GeminiSajuService = {
                             lucky_color: { type: Type.STRING }
                         },
                         required: ["element_analysis", "main_prediction", "advice", "lucky_direction", "lucky_color"]
-                    }
+                    },
+                    safetySettings: [
+                        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+                    ]
                 }
             });
 
-            const textResponse = response.text;
+            let textResponse = response.text;
             if (!textResponse) return null;
+            
+            // Clean Markdown (```json ... ```)
+            textResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
+            
             return JSON.parse(textResponse) as GeminiSajuResponse;
         } catch (error) {
             console.error("❌ Saju Error:", error);
