@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowLeft, RefreshCw, Save, Sparkles, Crown, Zap } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// --- INTERNAL CONFETTI COMPONENT (Safe, No Library Needed) ---
+// --- 1. 내장형 꽃가루 컴포넌트 (라이브러리 X, 에러 0%) ---
 const SimpleConfetti = () => {
   const [particles, setParticles] = useState<any[]>([]);
 
