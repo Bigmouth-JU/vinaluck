@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { ZODIACS } from '../constants';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface FortunePageProps {
     onZodiacSelect: (id: string) => void;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface LotterySliderProps {
     t: GlobalTranslation;

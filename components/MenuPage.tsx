@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { History, FileText, ChevronRight, ArrowLeft, Trash2, Calendar } from 'lucide-react';
-import { GlobalTranslation, SavedTicket } from '../App';
+import { SavedTicket } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface MenuPageProps {
     t: GlobalTranslation;

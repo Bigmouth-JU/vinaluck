@@ -1,6 +1,6 @@
 import React from 'react';
 import { Gift } from 'lucide-react';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface HeroJackpotProps {
     t: GlobalTranslation;

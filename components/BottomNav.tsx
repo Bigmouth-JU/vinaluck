@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { LayoutGrid, Cloud, Menu, Bot, Wand2 } from 'lucide-react';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface BottomNavProps {
     onAiPickClick: () => void;

@@ -1,4 +1,5 @@
 
+
 import { DreamInterpretation } from '../types';
 import { FateResult, FourPillars, FiveElements } from '../components/FateCardModal';
 
@@ -455,7 +456,7 @@ export const VinaLuckEngine = {
 
         // Determine Dominant Element for narrative
         const entries = Object.entries(fiveElements);
-        entries.sort((a, b) => b[1] - a[1]);
+        entries.sort((a, b) => (b[1] as number) - (a[1] as number));
         const dominant = entries[0][0]; // 'kim', 'moc', etc.
         const weak = entries[entries.length - 1][0];
 
@@ -511,6 +512,7 @@ ${tmpl.body2(eMap[dominant], eMap[generatedByDom])}
         `;
 
         return {
+            source: 'local',
             name: name,
             info: `${gender === 'male' ? (lang === 'vn' ? 'Nam' : lang === 'kr' ? '남성' : 'Male') : (lang === 'vn' ? 'Nữ' : lang === 'kr' ? '여성' : 'Female')} • ${day}/${month}/${year}`,
             advice: markdownReport.trim(),

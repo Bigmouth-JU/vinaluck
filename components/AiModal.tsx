@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { RefreshCw, Save, Target, X, Trophy, Sparkles, Zap, ArrowLeft } from 'lucide-react';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface AiModalProps {
     isOpen: boolean;

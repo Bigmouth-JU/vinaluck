@@ -4,8 +4,9 @@ import { ZodiacFortune } from '../types';
 import LottoRecommendation from './LottoRecommendation';
 import { Language } from './Header';
 import { VinaLuckEngine } from '../utils/VinaLuckEngine';
+import { GeminiFortuneService, GeminiFortuneResponse } from '../services/geminiFortune';
 import { Loader2, Sparkles, X, ChevronDown, Calendar, Wallet, Heart, Info, ArrowLeft } from 'lucide-react';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface DailyFortuneModalProps {
     isOpen: boolean;
@@ -22,25 +23,12 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-// Main CTA Text (Keep as is)
-const CTA_TEXT = {
-    vn: { title: "Phân Tích Vận Mệnh Chuyên Sâu", sub: "Nhập ngày giờ sinh để nhận kết quả chính xác hơn" },
-    kr: { title: "나만을 위한 정밀 사주 분석", sub: "생년월일시를 입력하고 더 정확한 결과를 확인하세요" },
-    en: { title: "Deep Personal Fortune Analysis", sub: "Enter birth details for higher accuracy" }
-};
-
-// Sheet Button Text (UPDATED)
-const SHEET_BTN_TEXT = {
-    vn: "Xem Phân Tích",
-    kr: "정밀 분석 보기",
-    en: "View Analysis"
-};
-
 const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, data, birthYear, t, lang, onShopeeClick }) => {
     const [isAnalyzed, setIsAnalyzed] = useState(false);
     const [showSheet, setShowSheet] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [deepInput, setDeepInput] = useState({ year: '1996', month: '1', day: '1', hour: '9' });
+    const [aiResult, setAiResult] = useState<GeminiFortuneResponse | null>(null);
     
     // Trigger to force lottery reset/refresh
     const [resetKey, setResetKey] = useState(0);
@@ -53,6 +41,7 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
         if (isOpen && data) {
             setIsAnalyzed(false);
             setShowSheet(false);
+            setAiResult(null);
             let initialYear = 2008; // Default from image
             if (birthYear) {
                 initialYear = birthYear;
@@ -74,21 +63,36 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
         }
     }, [isOpen, data, birthYear]);
 
-    const handleAnalyze = () => {
+    const handleAnalyze = async () => {
         setIsAnalyzing(true);
-        setTimeout(() => {
-            setIsAnalyzed(true);
-            setShowSheet(false);
-            setIsAnalyzing(false);
-            
-            // 1. Trigger Lottery Reset
-            setResetKey(prev => prev + 1);
+        setAiResult(null);
 
-            // 2. Auto-Scroll to Top
-            if (scrollRef.current) {
-                scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        // Call Gemini Service
+        if (data) {
+            const aiData = await GeminiFortuneService.analyzeDailyFortune(
+                "Bạn", // Generic name since we don't have it here
+                "male", // Defaulting gender as it's not in this specific modal input, strictly logic placeholder
+                deepInput,
+                t.zodiac[data.id as keyof typeof t.zodiac],
+                lang
+            );
+            if (aiData) {
+                setAiResult(aiData);
             }
-        }, 1200);
+        }
+
+        // UI Transitions
+        setIsAnalyzed(true);
+        setShowSheet(false);
+        setIsAnalyzing(false);
+        
+        // 1. Trigger Lottery Reset
+        setResetKey(prev => prev + 1);
+
+        // 2. Auto-Scroll to Top
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
     };
 
     const dailyStats = useMemo(() => {
@@ -101,7 +105,24 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
 
     if (!isOpen || !data || !dailyStats) return null;
 
-    const fortuneDisplay = dailyStats.fortuneText
+    // --- Data Mapping Logic (AI vs Local) ---
+    const displayData = aiResult ? {
+        fortuneText: `${aiResult.summary}\n\n${aiResult.career}\n\n${aiResult.love}\n\n${aiResult.health}`,
+        luckyNumber: aiResult.lucky_number.split(',')[0].trim(), // Take first number
+        luckyTime: aiResult.lucky_time,
+        luckyColor: aiResult.lucky_color,
+        stars: Math.round(aiResult.score / 20), // Convert 100 scale to 5 stars
+        action: aiResult.action_advice
+    } : {
+        fortuneText: dailyStats.fortuneText,
+        luckyNumber: dailyStats.luckyNumber,
+        luckyTime: dailyStats.luckyTime,
+        luckyColor: dailyStats.luckyColor,
+        stars: dailyStats.stars,
+        action: null
+    };
+
+    const fortuneDisplay = displayData.fortuneText
         .replace('[Phân Tích Sâu] ', '')
         .replace('[Deep Analysis] ', '')
         .replace('[정밀 분석] ', '');
@@ -121,11 +142,15 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                     <ArrowLeft size={24} strokeWidth={3} />
                 </button>
                 <div className="flex flex-col">
-                    <h1 className="text-[#B01E17] font-black font-heading text-xl leading-none">
-                        {t.fortune.modalTitle}
-                    </h1>
-                    <p className="text-gray-500 text-[11px] font-bold mt-0.5">
-                        {t.header.fortuneSub}
+                    <div className="flex items-center gap-2">
+                        {/* Dynamic Title */}
+                        <h1 className="text-[#B01E17] font-bold font-heading text-lg leading-none">
+                            {t.fortune.modalTitle}
+                        </h1>
+                    </div>
+                    {/* Dynamic Sub-header */}
+                    <p className="text-gray-500 text-[11px] font-medium mt-0.5">
+                        {aiResult ? t.fortune.interpretedByAi : t.header.fortuneSub}
                     </p>
                 </div>
             </header>
@@ -145,20 +170,20 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                                     src={data.image} 
                                 />
                             </div>
-                            <div className="absolute bottom-1 right-1 w-12 h-12 bg-[#B01E17] rounded-full border-[3px] border-white shadow-xl flex items-center justify-center text-white font-black text-lg">
-                                {dailyStats.luckyNumber}
+                            <div className="absolute bottom-1 right-1 w-12 h-12 bg-[#B01E17] rounded-full border-[3px] border-white shadow-xl flex items-center justify-center text-white font-bold text-lg">
+                                {displayData.luckyNumber}
                             </div>
                         </div>
 
-                        {/* Name */}
-                        <h2 className="text-4xl font-black font-heading text-[#B01E17] uppercase tracking-tighter -mt-2">
+                        {/* Name - Dynamic from Translation */}
+                        <h2 className="text-4xl font-bold font-heading text-[#B01E17] uppercase tracking-tighter -mt-2">
                             {t.zodiac[data.id as keyof typeof t.zodiac]}
                         </h2>
 
                         {/* Year Button */}
                         <button 
                             onClick={() => setShowSheet(true)}
-                            className="flex items-center gap-2 px-5 py-2 bg-gray-50 border border-gray-200 rounded-full text-gray-700 font-bold text-sm active:bg-gray-100 transition-colors"
+                            className="flex items-center gap-2 px-5 py-2 bg-gray-50 border border-gray-200 rounded-full text-gray-700 font-semibold text-sm active:bg-gray-100 transition-colors"
                         >
                             <Calendar size={16} className="text-gray-400" />
                             <span>{t.fortune.yearLabel}: {deepInput.year}</span>
@@ -169,8 +194,8 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                             {[...Array(5)].map((_, i) => (
                                 <span 
                                     key={i} 
-                                    className={`material-symbols-outlined text-3xl ${i < dailyStats.stars ? 'text-[#FFCD00]' : 'text-gray-300'}`} 
-                                    style={i < dailyStats.stars ? { fontVariationSettings: "'FILL' 1" } : {}}
+                                    className={`material-symbols-outlined text-3xl ${i < displayData.stars ? 'text-[#FFCD00]' : 'text-gray-300'}`} 
+                                    style={i < displayData.stars ? { fontVariationSettings: "'FILL' 1" } : {}}
                                 >
                                     star
                                 </span>
@@ -182,19 +207,50 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                             {isAnalyzed && (
                                 <div className="flex items-center justify-center gap-2 mb-1">
                                     <Sparkles size={14} className="text-[#B01E17]" />
-                                    <span className="text-[10px] font-black text-[#B01E17] uppercase tracking-widest">{t.fortune.deepTitle}</span>
+                                    <span className="text-[10px] font-bold text-[#B01E17] uppercase tracking-widest">{t.fortune.deepTitle}</span>
                                 </div>
                             )}
+                            
+                            {/* AI Action Advice Highlight */}
+                            {displayData.action && (
+                                <div className="bg-indigo-50 border border-indigo-100 p-3 rounded-xl flex gap-3 items-start">
+                                    <div className="mt-1 shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                        <Info size={14} />
+                                    </div>
+                                    <div>
+                                        {/* Dynamic Core Advice Title */}
+                                        <p className="text-xs font-bold text-indigo-900 uppercase mb-0.5">{t.fortune.coreAdvice}</p>
+                                        <p className="text-sm font-medium text-indigo-800">{displayData.action}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="space-y-4">
                                 {storySegments.map((text, i) => {
-                                    const Icon = i === 0 ? Sparkles : i === 1 ? Wallet : i === 2 ? Heart : Info;
-                                    const iconColor = i === 0 ? "text-[#EAB308]" : i === 1 ? "text-[#B01E17]" : "text-[#EF4444]";
+                                    // Icons mapping based on assumed order: Summary, Career/Wealth, Love, Health
+                                    let Icon = Sparkles;
+                                    let iconColor = "text-[#EAB308]";
+                                    
+                                    if (aiResult) {
+                                        if (i === 0) { Icon = Sparkles; iconColor = "text-[#EAB308]"; }
+                                        else if (i === 1) { Icon = Wallet; iconColor = "text-[#B01E17]"; }
+                                        else if (i === 2) { Icon = Heart; iconColor = "text-[#EF4444]"; }
+                                        else { Icon = Info; iconColor = "text-blue-500"; }
+                                    } else {
+                                        // Legacy order logic
+                                        Icon = i === 0 ? Sparkles : i === 1 ? Wallet : i === 2 ? Heart : Info;
+                                        iconColor = i === 0 ? "text-[#EAB308]" : i === 1 ? "text-[#B01E17]" : "text-[#EF4444]";
+                                    }
+
+                                    if (!text) return null;
+
                                     return (
                                         <div key={i} className="flex gap-3 items-start">
                                             <div className="mt-0.5 shrink-0 w-6 h-6 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
                                                 <Icon className={`${iconColor}`} size={14} />
                                             </div>
-                                            <p className="text-sm leading-relaxed text-gray-700 font-medium text-left">
+                                            {/* Body Text: Normal, Relaxed */}
+                                            <p className="text-sm leading-relaxed text-gray-700 font-normal text-left whitespace-pre-line">
                                                 {text}
                                             </p>
                                         </div>
@@ -208,7 +264,7 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                     <section className="w-full mt-2">
                             {/* LottoRecommendation has its own margins/padding and background. Pass Reset Key. */}
                             <div className="-mt-4">
-                            <LottoRecommendation lang={lang} seedNumbers={[dailyStats.luckyNumber]} resetKey={resetKey} />
+                            <LottoRecommendation lang={lang} seedNumbers={[displayData.luckyNumber]} resetKey={resetKey} />
                             </div>
                     </section>
 
@@ -218,15 +274,15 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                             <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-[#B01E17] mb-1">
                                 <Wallet size={20} />
                             </div>
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wide">{t.fortune.luckyNum}</span>
-                            <span className="text-3xl font-black font-heading text-[#B01E17] tracking-tighter">{dailyStats.luckyNumber}</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t.fortune.luckyNum}</span>
+                            <span className="text-3xl font-bold font-heading text-[#B01E17] tracking-tighter">{displayData.luckyNumber}</span>
                         </div>
                         <div className="bg-white rounded-2xl p-4 flex flex-col items-center gap-2 border border-gray-100 shadow-sm">
                             <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-1">
                                 <Heart size={20} />
                             </div>
-                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wide">{t.fortune.luckyTime}</span>
-                            <span className="text-sm font-bold text-blue-900 bg-blue-50 px-3 py-1 rounded-full">{dailyStats.luckyTime}</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">{t.fortune.luckyTime}</span>
+                            <span className="text-sm font-semibold text-blue-900 bg-blue-50 px-3 py-1 rounded-full">{displayData.luckyTime}</span>
                         </div>
                     </section>
 
@@ -237,9 +293,11 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                     >
                         <div className="flex items-center gap-2">
                             <Sparkles size={20} fill="white" className="text-yellow-300" />
-                            <span className="font-black font-heading text-lg uppercase tracking-tight">{CTA_TEXT[lang].title}</span>
+                            {/* Dynamic CTA Title */}
+                            <span className="font-bold font-heading text-lg uppercase tracking-tight">{t.fortune.ctaTitle}</span>
                         </div>
-                        <span className="text-[10px] font-medium opacity-80">{CTA_TEXT[lang].sub}</span>
+                        {/* Dynamic CTA Subtitle */}
+                        <span className="text-[10px] font-medium opacity-80">{t.fortune.ctaSub}</span>
                     </button>
 
                 </main>
@@ -255,12 +313,12 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                     <div className="relative bg-white w-full rounded-t-[30px] p-6 pb-10 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] animate-bounce-in z-10">
                         <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
                         <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-black font-heading text-[#B01E17]">{t.fortune.deepTitle}</h3>
+                            <h3 className="text-xl font-bold font-heading text-[#B01E17]">{t.fortune.deepTitle}</h3>
                             <button onClick={() => setShowSheet(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"><X size={20} /></button>
                         </div>
                         <div className="space-y-6">
                             <div>
-                                <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest block mb-2">{t.fortune.yearLabel} {t.fortune.bornIn}</label>
+                                <label className="text-[11px] font-bold text-gray-400 uppercase tracking-widest block mb-2">{t.fortune.yearLabel} {t.fortune.bornIn}</label>
                                 <div className="relative">
                                     <select value={deepInput.year} onChange={(e) => setDeepInput({...deepInput, year: e.target.value})} className="w-full bg-gray-50 border-2 border-[#B01E17]/10 rounded-2xl px-5 py-4 text-lg font-bold outline-none appearance-none focus:border-[#B01E17]/40 transition-all">{YEARS.map(y => <option key={y} value={y}>{y}</option>)}</select>
                                     <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-[#B01E17] pointer-events-none" size={24} />
@@ -308,7 +366,8 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                                 ) : (
                                     <>
                                         <Sparkles size={20} fill="currentColor" className="text-yellow-400" />
-                                        <span className="font-black font-heading text-lg uppercase tracking-wider">{SHEET_BTN_TEXT[lang]}</span>
+                                        {/* Dynamic Button Text */}
+                                        <span className="font-bold font-heading text-lg uppercase tracking-wider">{t.fortune.sheetBtn}</span>
                                     </>
                                 )}
                             </button>

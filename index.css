@@ -1,0 +1,33 @@
+/* 1. 폰트 가져오기 (Be Vietnam Pro + Noto Sans KR + Noto Sans) */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Noto+Sans+KR:wght@100..900&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* 2. Tailwind 기본 설정 (지우면 안 됩니다!) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3. 폰트 및 스타일 적용 규칙 */
+@layer base {
+  body {
+    /* 우선순위: 베트남어(영어) -> 한국어 -> 기타 */
+    font-family: 'Be Vietnam Pro', 'Noto Sans KR', 'Noto Sans', sans-serif;
+    
+    /* 글자 렌더링 품질 향상 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    
+    /* 기본 글자색: 너무 새카만 블랙보다는 짙은 회색이 눈에 편합니다 */
+    @apply text-gray-800;
+  }
+
+  /* 제목 태그들은 단단해 보이게 자간을 살짝 좁힙니다 */
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight;
+  }
+}
+
+/* (선택사항) 스크롤바 숨기기 - 모바일 앱처럼 깔끔하게 보임 */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}

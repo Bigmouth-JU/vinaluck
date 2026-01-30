@@ -1,25 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
-import { History, ChevronRight, User, Calendar, Bot, Target, Lock, Sparkles, MessageSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { ChevronRight, Calendar, Bot, Target, Lock, Sparkles, MessageSquare, User } from 'lucide-react';
 import UnifiedJackpotCarousel from './UnifiedJackpotCarousel';
 import DreamDecoder from './DreamDecoder';
 import DailyLuck from './DailyLuck';
-import { GlobalTranslation, SavedTicket } from '../App';
-import { VinaLuckEngine } from '../utils/VinaLuckEngine';
-import { FateResult } from './FateCardModal';
+import { SavedTicket } from '../App';
+import { FateInputData } from './FateCardModal';
 import { LottoResult } from '../services/lottoApi';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface HomePageProps {
     onZodiacSelect: (id: string, year?: number) => void;
-    t: GlobalTranslation;
     onShopeeClick: () => void;
     savedCount: number;
     savedTickets: SavedTicket[];
     onNavigateToHistory: () => void;
     onOpenAiPick: () => void;
-    lang: 'vn' | 'en' | 'kr';
-    onShowFate: (result: FateResult) => void;
-    onDreamSearch: (term: string) => void;
+    onShowFateInput: (data: FateInputData) => void;
+    onDreamSearch: (term: string, emotion: string) => void;
     onNavigateToDream: () => void;
 }
 
@@ -86,18 +84,19 @@ const LAUNCH_DATA: LottoResult[] = [
 
 const HomePage: React.FC<HomePageProps> = ({ 
     onZodiacSelect, 
-    t, 
     onShopeeClick, 
     savedCount, 
     savedTickets, 
     onNavigateToHistory, 
     onOpenAiPick, 
-    lang, 
-    onShowFate,
+    onShowFateInput, 
     onDreamSearch,
     onNavigateToDream
 }) => {
     
+    // Get translations from Context
+    const { t, language } = useLanguage();
+
     // Fate Form State
     const [name, setName] = useState('');
     const [gender, setGender] = useState<'male' | 'female'>('male');
@@ -133,8 +132,18 @@ const HomePage: React.FC<HomePageProps> = ({
         if (!name.trim()) {
             return;
         }
-        const result = VinaLuckEngine.analyzeFate(name, gender, day, month, year, time, topic, specificConcern, lang);
-        onShowFate(result);
+        // Prepare Input Data for Parent to Handle (API Call)
+        const topicLabel = TOPICS.find(t => t.id === topic)?.label || topic;
+        onShowFateInput({
+            name,
+            gender,
+            day,
+            month,
+            year,
+            time,
+            category: topicLabel,
+            question: specificConcern
+        });
     };
 
     return (
@@ -150,8 +159,11 @@ const HomePage: React.FC<HomePageProps> = ({
             </div>
             
             {/* 3. OVERLAPPING CONTENT SHEET */}
-            {/* rounded-t-[32px] and -mt-12 create the card effect */}
-            <div className="relative z-20 bg-[#F5F7FA] rounded-t-[32px] -mt-12 px-4 pt-8 pb-32 flex flex-col gap-6 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
+            {/* 
+                - rounded-t-[32px] and -mt-12 create the card effect 
+                - Adjusted pb-8 to reduce whitespace (was pb-32)
+            */}
+            <div className="relative z-20 bg-[#F5F7FA] rounded-t-[32px] -mt-12 px-4 pt-8 pb-8 flex flex-col gap-6 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
                 
                 {/* A. TODAY'S LUCK (Zodiac Grid) */}
                 <DailyLuck onZodiacSelect={onZodiacSelect} t={t} onShopeeClick={onShopeeClick} />
@@ -159,14 +171,14 @@ const HomePage: React.FC<HomePageProps> = ({
                 {/* B. DREAM DECODER */}
                 <DreamDecoder t={t} onSearch={onDreamSearch} onNavigate={onNavigateToDream} />
 
-                {/* C. FATE INPUT FORM (Moved to bottom as requested) */}
+                {/* C. FATE INPUT FORM */}
                 <section>
                     <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4 border border-gray-100">
                         
-                        {/* Header */}
+                        {/* Header: Unified Style - Uppercase */}
                         <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
                             <span className="text-xl">📜</span>
-                            <h2 className="text-lg font-black font-heading text-gray-800 uppercase tracking-wide leading-tight">
+                            <h2 className="text-lg font-bold font-heading text-gray-800 uppercase tracking-tight">
                                 {t.home.form.title}
                             </h2>
                         </div>
@@ -183,57 +195,57 @@ const HomePage: React.FC<HomePageProps> = ({
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         placeholder={t.home.form.namePlaceholder}
-                                        className="w-full h-11 bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-2 text-sm font-medium focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
+                                        className="w-full h-11 bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-2 text-sm font-normal text-gray-800 focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400"
                                     />
                                 </div>
                                 <div className="flex bg-gray-100 p-1 rounded-xl h-11 w-32 shrink-0">
                                     <button 
                                         onClick={() => setGender('male')}
-                                        className={`flex-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center ${gender === 'male' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400'}`}
+                                        className={`flex-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center ${gender === 'male' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500'}`}
                                     >
                                         🚹
                                     </button>
                                     <button 
                                         onClick={() => setGender('female')}
-                                        className={`flex-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center ${gender === 'female' ? 'bg-[#ED1C24] text-white shadow-sm' : 'text-gray-400'}`}
+                                        className={`flex-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center ${gender === 'female' ? 'bg-[#ED1C24] text-white shadow-sm' : 'text-gray-500'}`}
                                     >
                                         🚺
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Date Selects */}
+                            {/* Date Selects: Normal font weight for readability */}
                             <div className="grid grid-cols-4 gap-2">
                                 <div className="relative">
-                                    <select value={day} onChange={(e) => setDay(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-xs font-bold appearance-none outline-none focus:border-primary text-center">
+                                    <select value={day} onChange={(e) => setDay(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-sm font-normal text-gray-700 appearance-none outline-none focus:border-primary text-center">
                                         {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
                                     </select>
                                 </div>
                                 <div className="relative">
-                                    <select value={month} onChange={(e) => setMonth(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-xs font-bold appearance-none outline-none focus:border-primary text-center">
+                                    <select value={month} onChange={(e) => setMonth(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-sm font-normal text-gray-700 appearance-none outline-none focus:border-primary text-center">
                                         {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
                                     </select>
                                 </div>
                                 <div className="relative">
-                                    <select value={year} onChange={(e) => setYear(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-xs font-bold appearance-none outline-none focus:border-primary text-center">
+                                    <select value={year} onChange={(e) => setYear(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-sm font-normal text-gray-700 appearance-none outline-none focus:border-primary text-center">
                                         {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                                     </select>
                                 </div>
                                  <div className="relative">
-                                    <select value={time} onChange={(e) => setTime(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-xs font-bold appearance-none outline-none focus:border-primary text-center">
+                                    <select value={time} onChange={(e) => setTime(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-sm font-normal text-gray-700 appearance-none outline-none focus:border-primary text-center">
                                         <option value="unknown">?</option>
                                         {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
                                     </select>
                                 </div>
                             </div>
 
-                            {/* Topic Chips */}
+                            {/* Topic Chips: Medium weight, not bold */}
                             <div className="flex flex-wrap gap-2">
                                 {TOPICS.map((tItem) => (
                                     <button
                                         key={tItem.id}
                                         onClick={() => setTopic(tItem.id)}
-                                        className={`px-3 py-2 rounded-lg border text-xs font-bold flex items-center gap-1 transition-all ${topic === tItem.id ? 'bg-[#FFF8F0] border-[#FFCD00] text-gray-900 ring-1 ring-[#FFCD00]/50' : 'bg-white border-gray-200 text-gray-500'}`}
+                                        className={`px-3 py-2 rounded-lg border text-xs font-medium flex items-center gap-1 transition-all ${topic === tItem.id ? 'bg-[#FFF8F0] border-[#FFCD00] text-gray-900 ring-1 ring-[#FFCD00]/50' : 'bg-white border-gray-200 text-gray-500'}`}
                                     >
                                         <span>{tItem.icon}</span>
                                         <span>{tItem.label}</span>
@@ -241,86 +253,40 @@ const HomePage: React.FC<HomePageProps> = ({
                                 ))}
                             </div>
 
-                            {/* Specific Concern Input */}
+                            {/* Specific Concern Input: Normal font, relaxed leading */}
                             <div className="relative">
                                 <MessageSquare className="absolute left-3 top-3 text-gray-400" size={14} />
                                 <textarea
                                     value={specificConcern}
                                     onChange={(e) => setSpecificConcern(e.target.value)}
-                                    placeholder={lang === 'vn' ? "Nhập nỗi lo cụ thể (Tùy chọn)..." : "Enter specific concern (Optional)..."}
-                                    className="w-full h-20 bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm font-medium focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400 resize-none"
+                                    placeholder={language === 'vn' ? "Nhập nỗi lo cụ thể (Tùy chọn)..." : "Enter specific concern (Optional)..."}
+                                    className="w-full h-20 bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-3 py-2.5 text-sm font-normal text-gray-800 leading-relaxed focus:ring-1 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-gray-400 resize-none"
                                 />
                             </div>
 
                             {/* Privacy Note */}
                             <div className="flex items-center justify-center gap-1.5 -mt-1">
                                 <Lock size={10} className="text-gray-400" />
-                                <span className="text-[10px] text-gray-400 font-medium">{t.home.form.privacy}</span>
+                                <span className="text-[10px] text-gray-400 font-normal">{t.home.form.privacy}</span>
                             </div>
 
-                            {/* Analyze Button */}
+                            {/* Analyze Button: Semibold instead of Black */}
                             <button 
                                 onClick={handleAnalyzeFate}
                                 className="w-full h-12 bg-gradient-to-r from-[#B01E17] to-[#ED1C24] hover:opacity-90 text-white rounded-xl shadow-lg shadow-red-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                             >
                                 <Sparkles size={18} className="text-yellow-300" fill="currentColor" />
-                                <span className="font-black font-heading uppercase tracking-wide text-base">{t.home.form.analyze}</span>
+                                <span className="font-semibold font-heading uppercase tracking-wide text-base">{t.home.form.analyze}</span>
                             </button>
                         </div>
                     </div>
                 </section>
 
-                {/* D. HISTORY BUTTON */}
-                <section>
-                    <button 
-                        onClick={onNavigateToHistory}
-                        className="w-full bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex items-center justify-between group active:scale-[0.99] transition-transform h-12"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                                <History size={16} />
-                            </div>
-                            <div className="flex flex-col items-start">
-                                <span className="text-xs font-bold font-heading text-gray-900 leading-none">{t.home.simulationHistory}</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <span className="text-[10px] text-gray-400">{savedCount} {t.home.saved}</span>
-                            <ChevronRight size={16} className="text-gray-300 group-hover:text-primary transition-colors" />
-                        </div>
-                    </button>
-                </section>
-
-                {/* E. PARTNER AD */}
-                <section>
-                    <div className="bg-[#EEF2FF] rounded-xl p-3 border border-indigo-100 relative overflow-hidden shadow-sm min-h-[70px] flex items-center">
-                        <div className="absolute right-0 top-0 w-24 h-24 bg-indigo-200/40 rounded-full blur-2xl -translate-y-1/2 translate-x-1/4"></div>
-                        <div className="flex items-center justify-between w-full relative z-10">
-                            <div className="flex gap-2.5 items-center">
-                                <div className="w-9 h-9 rounded-lg bg-white shadow-sm flex items-center justify-center text-indigo-600">
-                                    <User size={18} />
-                                </div>
-                                <div className="flex flex-col">
-                                    <div className="flex items-center gap-2">
-                                        <h3 className="text-xs font-bold font-heading text-indigo-900">Bemeup</h3>
-                                        <span className="bg-indigo-200 text-[7px] px-1 py-px rounded text-indigo-800 font-bold uppercase tracking-wide">{t.home.featuredPartner}</span>
-                                    </div>
-                                    <p className="text-[9px] text-indigo-700/80 mt-0.5 leading-tight">
-                                        Premium K-Beauty Platform
-                                    </p>
-                                </div>
-                            </div>
-                            <button className="bg-indigo-600 hover:bg-indigo-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-lg shadow-sm shadow-indigo-200 transition-colors whitespace-nowrap">
-                                {t.home.visitStore}
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                {/* F. RECENT ACTIVITY WIDGET */}
-                <section className="mb-6">
+                {/* D. RECENT ACTIVITY WIDGET */}
+                <section className="mb-2">
                     <div className="flex items-center justify-between px-1 mb-3">
-                         <h3 className="text-xs font-bold font-heading text-gray-800 uppercase tracking-wide">{t.home.recentTickets}</h3>
+                         {/* Unified Title Style */}
+                         <h3 className="text-lg font-bold font-heading text-gray-800 uppercase tracking-tight">{t.home.recentTickets}</h3>
                          {savedCount > 0 && (
                             <button onClick={onNavigateToHistory} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-0.5">
                                 {t.home.viewAll} <ChevronRight size={12} />

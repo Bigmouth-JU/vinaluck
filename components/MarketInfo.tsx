@@ -1,6 +1,6 @@
 import React from 'react';
 import { TrendingUp, DollarSign } from 'lucide-react';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface MarketInfoProps {
     t: GlobalTranslation;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 
 interface LotteryCarouselProps {
     t: GlobalTranslation;

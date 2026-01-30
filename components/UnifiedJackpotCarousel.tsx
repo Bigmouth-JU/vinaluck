@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 import { Trophy, Clock } from 'lucide-react';
 import { LottoResult } from '../services/lottoApi';
 

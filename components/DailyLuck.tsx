@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { Sparkles, ChevronDown } from 'lucide-react';
 import { ZODIACS } from '../constants';
-import { GlobalTranslation } from '../App';
+import { GlobalTranslation } from '../contexts/LanguageContext';
 import { VinaLuckEngine } from '../utils/VinaLuckEngine';
 
 interface DailyLuckProps {
@@ -47,9 +47,10 @@ const DailyLuck: React.FC<DailyLuckProps> = ({ onZodiacSelect, t }) => {
     return (
         <section className="bg-card-light rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col gap-4">
             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                    <Sparkles className="text-accent" size={18} fill="currentColor" />
-                    <h3 className="text-xs font-bold font-heading text-gray-800 uppercase tracking-wide">{t.home.luck.title}</h3>
+                <div className="flex items-center gap-2">
+                    <Sparkles className="text-accent" size={20} fill="currentColor" />
+                    {/* Unified Title Style: text-lg font-bold uppercase */}
+                    <h3 className="text-lg font-bold font-heading text-gray-800 uppercase tracking-tight">{t.home.luck.title}</h3>
                 </div>
                 <button className="text-[10px] font-bold text-primary bg-primary/5 hover:bg-primary/10 transition px-2 py-1 rounded-md">{t.home.luck.save}</button>
             </div>
