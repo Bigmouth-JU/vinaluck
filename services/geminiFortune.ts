@@ -21,37 +21,33 @@ export const GeminiFortuneService = {
         lang: 'vn' | 'en' | 'kr'
     ): Promise<GeminiFortuneResponse | null> => {
         
-        // System Requirement: Must use process.env.API_KEY for the preview environment
-        const apiKey = process.env.API_KEY;
-
-        if (!apiKey) {
-            console.warn("❌ API Key missing.");
-            return null;
-        }
-
-        const ai = new GoogleGenAI({ apiKey: apiKey });
+        // Use process.env.API_KEY as per coding guidelines
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const today = new Date().toLocaleDateString('vi-VN');
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
         if (lang === 'kr') langInstruction = "Language: Korean (한국어).";
         if (lang === 'en') langInstruction = "Language: English.";
 
-        // CRITICAL: Force detailed responses via prompt engineering
+        // ENHANCED PROMPT: Force lengthy, detailed storytelling
         const prompt = `
-        Role: Legendary Feng Shui Master (80 years old). 
-        Task: Provide a DEEP, DETAILED daily fortune analysis.
+        Role: You are a Talkative, Mystical 80-year-old Feng Shui Master. 
+        You speak with wisdom, using metaphors of nature (Water flowing, Fire burning, Wind blowing).
+        
+        Task: Provide a DEEP, DETAILED daily fortune analysis. Do NOT be brief.
         User: ${name} (${gender}), DOB: ${dob.day}/${dob.month}/${dob.year}, Zodiac: ${zodiac}. Date: ${today}.
         ${langInstruction}
 
-        CRITICAL INSTRUCTIONS:
-        1. **NO BREVITY**: Each section (Health, Career, Love) MUST be at least 3-4 sentences long.
-        2. **FIVE ELEMENTS**: Explain "Why" using Ngũ Hành (Metal, Wood, Water, Fire, Earth) logic.
-        3. **TONE**: Mystical, poetic, empathetic, and wise. Use nature metaphors (wind, flowing water, strong mountains).
+        CRITICAL INSTRUCTIONS FOR LENGTH & DEPTH:
+        1. **WRITE LONG PARAGRAPHS**: Each section (Health, Career, Love) MUST be a minimum of 3-4 full sentences.
+        2. **USE FIVE ELEMENTS**: Explain "Why" something is happening using Ngũ Hành (Metal, Wood, Water, Fire, Earth).
+           - Example: "Because Fire melts Metal, you might feel..."
+        3. **TONE**: Poetic, empathetic, and wise. Treat the user like your grandchild.
         4. **STRUCTURE**:
-           - Summary: A poetic overview of the day's energy.
-           - Career: Detailed advice on work, investment, and obstacles.
-           - Love: Detailed analysis of relationships, family harmony, or romance.
-           - Health: Specific advice on physical and mental well-being based on the elements.
+           - **Summary**: A poetic overview of the day's energy field.
+           - **Career**: Detailed advice on work/investment. Mention obstacles and specific opportunities.
+           - **Love**: Detailed analysis of relationships. Mention harmony, conflict, or romance.
+           - **Health**: Specific advice on physical/mental well-being based on the elements.
         
         Return ONLY valid JSON.
         `;
@@ -66,10 +62,10 @@ export const GeminiFortuneService = {
                         type: Type.OBJECT,
                         properties: {
                             score: { type: Type.INTEGER, description: "Daily luck score from 0 to 100" },
-                            summary: { type: Type.STRING, description: "General overview (min 3 sentences)" },
-                            health: { type: Type.STRING, description: "Detailed health advice (min 3 sentences)" },
-                            career: { type: Type.STRING, description: "Detailed career advice (min 3 sentences)" },
-                            love: { type: Type.STRING, description: "Detailed love advice (min 3 sentences)" },
+                            summary: { type: Type.STRING, description: "General overview (min 3-4 sentences)" },
+                            health: { type: Type.STRING, description: "Detailed health advice (min 3-4 sentences)" },
+                            career: { type: Type.STRING, description: "Detailed career advice (min 3-4 sentences)" },
+                            love: { type: Type.STRING, description: "Detailed love advice (min 3-4 sentences)" },
                             lucky_number: { type: Type.STRING },
                             lucky_color: { type: Type.STRING },
                             lucky_time: { type: Type.STRING },

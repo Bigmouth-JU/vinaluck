@@ -21,12 +21,9 @@ export const GeminiSajuService = {
         lang: 'vn' | 'en' | 'kr'
     ): Promise<GeminiSajuResponse | null> => {
         
-        // System Requirement: Use process.env.API_KEY
-        if (!process.env.API_KEY) {
-            console.error("❌ API Key missing. Check .env");
-            return null;
-        }
-
+        console.log("Saju Service Started");
+        
+        // Use process.env.API_KEY as per coding guidelines
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const currentDate = new Date().toLocaleDateString('vi-VN');
 
@@ -40,11 +37,12 @@ export const GeminiSajuService = {
         Context: ${category}, Question: "${userQuestion}".
         Date: ${currentDate}.
         
-        Task: Analyze Five Elements. Answer specific worry or predict category.
-        Tone: Mystical, nature metaphors.
+        Task: Analyze Five Elements (Kim, Mộc, Thủy, Hỏa, Thổ). 
+        Answer the specific worry or predict the category trend.
+        Tone: Mystical, nature metaphors (e.g., "Like a strong tree in winter").
         ${langInstruction}
         
-        Return ONLY valid JSON.
+        IMPORTANT: Return ONLY valid JSON. No markdown formatting.
         `;
 
         try {
@@ -67,7 +65,6 @@ export const GeminiSajuService = {
                 }
             });
 
-            // System Requirement: access .text as property
             const textResponse = response.text;
             if (!textResponse) return null;
             return JSON.parse(textResponse) as GeminiSajuResponse;
