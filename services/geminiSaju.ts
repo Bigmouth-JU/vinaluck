@@ -23,7 +23,6 @@ export const GeminiSajuService = {
         
         console.log("Saju Service Started");
         
-        // Use process.env.API_KEY as per coding guidelines
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
         const currentDate = new Date().toLocaleDateString('vi-VN');
 
@@ -42,7 +41,7 @@ export const GeminiSajuService = {
         Tone: Mystical, nature metaphors (e.g., "Like a strong tree in winter").
         ${langInstruction}
         
-        IMPORTANT: Return ONLY valid JSON. No markdown formatting.
+        IMPORTANT: Return ONLY valid JSON. No markdown formatting outside the JSON string values.
         `;
 
         try {
