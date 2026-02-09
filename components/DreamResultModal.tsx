@@ -20,7 +20,7 @@ interface DreamResultModalProps {
 }
 
 const DreamResultModal: React.FC<DreamResultModalProps> = ({ isOpen, onBack, data, userZodiacId, t, lang, onShopeeClick, inputEmotion = 'neutral' }) => {
-    
+
     const [isLoading, setIsLoading] = useState(false);
     const [aiResult, setAiResult] = useState<GeminiDreamResponse | null>(null);
 
@@ -31,16 +31,23 @@ const DreamResultModal: React.FC<DreamResultModalProps> = ({ isOpen, onBack, dat
                 setIsLoading(true);
                 setAiResult(null); // Reset previous result
 
-                // Call Gemini Service
-                const result = await GeminiDreamService.interpretDream(data.keyword, inputEmotion, lang);
-                
-                if (result) {
-                    setAiResult(result);
-                } else {
-                    // Fallback to local engine if API fails or no key
+                try {
+                    // Call Gemini Service
+                    const result = await GeminiDreamService.interpretDream(data.keyword, inputEmotion, lang);
+
+                    if (result) {
+                        setAiResult(result);
+                    } else {
+                        // Fallback to local engine if data is null (shouldn happen with new service logic unless explicit null return)
+                        setAiResult(null);
+                    }
+                } catch (error: any) {
+                    console.error("Gemini API Error details:", error);
+                    alert(`Gemini Dream API Error: ${error.message || "Unknown error"}`);
                     setAiResult(null);
+                } finally {
+                    setIsLoading(false);
                 }
-                setIsLoading(false);
             };
 
             fetchInterpretation();
@@ -110,11 +117,11 @@ const DreamResultModal: React.FC<DreamResultModalProps> = ({ isOpen, onBack, dat
 
     return (
         <div className="absolute inset-0 z-50 flex flex-col bg-white overflow-hidden animate-slide-in-right">
-            
+
             {/* Header */}
             <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200 px-4 py-2 flex items-center gap-3 h-14">
-                <button 
-                    onClick={onBack} 
+                <button
+                    onClick={onBack}
                     className="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-50 text-gray-500 hover:text-primary hover:bg-gray-100 transition-colors"
                 >
                     <ArrowLeft size={20} />
@@ -132,19 +139,19 @@ const DreamResultModal: React.FC<DreamResultModalProps> = ({ isOpen, onBack, dat
             <div className="flex-1 overflow-y-auto no-scrollbar pb-32 w-full bg-white">
                 <main className="flex flex-col gap-4 p-4 w-full">
                     <section className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 flex flex-col items-center relative overflow-hidden">
-                        
+
                         {/* Image */}
                         <div className="relative z-10 w-24 h-24 rounded-full border-4 border-white shadow-lg flex items-center justify-center bg-blue-50 overflow-hidden mb-4">
                             <img alt={displayData.keyword} className="w-full h-full object-cover" src={displayData.imageUrl} />
                         </div>
-                        
+
                         {/* Title: H2 Style */}
                         <h2 className="text-2xl font-bold font-heading text-gray-900 mb-1 text-center capitalize">{displayData.keyword}</h2>
-                        
+
                         {/* Emotion Context Badge */}
                         <div className="flex items-center gap-2 mb-4 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
-                             <span className="text-xs text-gray-500 font-normal">Cảm xúc: </span>
-                             <span className="text-xs font-semibold capitalize text-gray-800">{inputEmotion}</span>
+                            <span className="text-xs text-gray-500 font-normal">Cảm xúc: </span>
+                            <span className="text-xs font-semibold capitalize text-gray-800">{inputEmotion}</span>
                         </div>
 
                         {/* Summary / Omen: H3 Style */}
@@ -153,7 +160,7 @@ const DreamResultModal: React.FC<DreamResultModalProps> = ({ isOpen, onBack, dat
                                 "{displayData.omen}"
                             </p>
                         </div>
-                        
+
                         {/* Detailed Analysis: Body Style */}
                         <div className="space-y-4 text-left w-full px-1">
                             {isAi ? (
@@ -197,10 +204,10 @@ const DreamResultModal: React.FC<DreamResultModalProps> = ({ isOpen, onBack, dat
                     <section className="bg-white rounded-xl p-5 border border-gray-100">
                         <h3 className="text-sm font-semibold font-heading text-gray-800 uppercase mb-4">{t.dream.advice}</h3>
                         <div className="flex gap-3 p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100 items-start">
-                             <div className="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 mt-0.5">
-                                 <Sparkles size={14} fill="currentColor" />
-                             </div>
-                             <span className="font-semibold text-green-900 text-sm">{displayData.advice}</span>
+                            <div className="w-6 h-6 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 mt-0.5">
+                                <Sparkles size={14} fill="currentColor" />
+                            </div>
+                            <span className="font-semibold text-green-900 text-sm">{displayData.advice}</span>
                         </div>
                     </section>
 

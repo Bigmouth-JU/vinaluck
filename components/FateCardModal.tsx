@@ -80,37 +80,42 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
             if (inputData && !localResult) {
                 const fetchAI = async () => {
                     setStage('fetching');
-                    const response = await GeminiSajuService.analyzeFate(
-                        inputData.name,
-                        inputData.gender,
-                        inputData.day,
-                        inputData.month,
-                        inputData.year,
-                        inputData.time,
-                        inputData.category,
-                        inputData.question,
-                        language
-                    );
+                    try {
+                        const response = await GeminiSajuService.analyzeFate(
+                            inputData.name,
+                            inputData.gender,
+                            inputData.day,
+                            inputData.month,
+                            inputData.year,
+                            inputData.time,
+                            inputData.category,
+                            inputData.question,
+                            language
+                        );
 
-                    if (response) {
-                        setAiResult({
-                            source: 'ai',
-                            name: inputData.name,
-                            info: `${inputData.gender === 'male' ? 'Nam' : 'Nữ'} • ${inputData.day}/${inputData.month}/${inputData.year}`,
-                            advice: response.main_prediction,
-                            elementAnalysis: response.element_analysis,
-                            luckyDirection: response.lucky_direction,
-                            luckyColor: response.lucky_color,
-                            luckyNumbers: [] // AI Saju doesn't generate numbers in this prompt version
-                        });
-                        setStage('ready');
-                    } else {
-                        // Fallback or Error handling? For now, just close or show error.
+                        if (response) {
+                            setAiResult({
+                                source: 'ai',
+                                name: inputData.name,
+                                info: `${inputData.gender === 'male' ? 'Nam' : 'Nữ'} • ${inputData.day}/${inputData.month}/${inputData.year}`,
+                                advice: response.main_prediction,
+                                elementAnalysis: response.element_analysis,
+                                luckyDirection: response.lucky_direction,
+                                luckyColor: response.lucky_color,
+                                luckyNumbers: [] // AI Saju doesn't generate numbers in this prompt version
+                            });
+                            setStage('ready');
+                        } else {
+                            onClose();
+                        }
+                    } catch (error: any) {
+                        console.error("Gemini Saju API Error:", error);
+                        alert(`Gemini Saju API Error: ${error.message || "Unknown error"}`);
                         onClose();
                     }
                 };
                 fetchAI();
-            } 
+            }
             // If we have localResult, just simulate the wait
             else if (localResult) {
                 setAiResult(localResult);
@@ -151,9 +156,9 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
             const parts = line.split(/(\*\*.*?\*\*)/g);
             return (
                 <p key={index} className="text-sm text-gray-600 font-normal leading-relaxed mb-1">
-                    {parts.map((part, i) => 
-                        part.startsWith('**') && part.endsWith('**') 
-                            ? <strong key={i} className="text-gray-800 font-semibold">{part.slice(2, -2)}</strong> 
+                    {parts.map((part, i) =>
+                        part.startsWith('**') && part.endsWith('**')
+                            ? <strong key={i} className="text-gray-800 font-semibold">{part.slice(2, -2)}</strong>
                             : part
                     )}
                 </p>
@@ -163,11 +168,11 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
 
     return (
         <div className="absolute inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in sm:p-4 overflow-hidden">
-            
+
             {/* CLOSE BUTTON */}
             {stage === 'open' && (
-                <button 
-                    onClick={onClose} 
+                <button
+                    onClick={onClose}
                     className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white/50 hover:text-white transition-colors z-50 animate-fade-in p-2 bg-black/20 rounded-full"
                 >
                     <X size={24} />
@@ -175,7 +180,7 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
             )}
 
             {/* --- STAGE 1 & 2: THE ENVELOPE (Centered) --- */}
-            <div 
+            <div
                 className={`absolute inset-0 flex flex-col items-center justify-center gap-6 transition-all duration-700 transform cursor-pointer
                     ${stage === 'open' ? 'scale-0 opacity-0 pointer-events-none' : 'scale-100 opacity-100'}
                 `}
@@ -185,7 +190,7 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
                     {stage === 'ready' && (
                         <div className="absolute inset-0 bg-yellow-500 blur-3xl opacity-40 animate-pulse rounded-full"></div>
                     )}
-                    
+
                     <div className={`w-32 h-32 flex items-center justify-center transition-all duration-500
                             ${(stage === 'loading' || stage === 'fetching') ? 'animate-bounce text-gray-400' : 'animate-pulse text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]'}
                     `}>
@@ -217,15 +222,15 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
 
 
             {/* --- STAGE 3: THE REPORT (Tall Bottom Sheet) --- */}
-            <div 
+            <div
                 className={`w-full h-[92%] sm:h-auto sm:max-h-[90vh] sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl transition-all duration-700 transform origin-bottom flex flex-col
                     ${stage === 'open' ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 absolute pointer-events-none'}
                 `}
             >
                 {/* Header Banner - Sticky */}
                 <div className="bg-slate-900 text-white p-6 relative shrink-0">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
-                        <div className="relative z-10">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+                    <div className="relative z-10">
                         <div className="flex justify-between items-start">
                             <div>
                                 <span className="text-yellow-500 text-[10px] font-bold uppercase tracking-widest border border-yellow-500/30 px-2 py-0.5 rounded">
@@ -237,14 +242,14 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
                             </div>
                             {displayData?.source === 'ai' ? <Bot className="text-white/20" size={40} /> : <FileText className="text-white/20" size={40} />}
                         </div>
-                        </div>
+                    </div>
                 </div>
 
                 {/* Scrollable Report Content */}
                 <div className="flex-1 overflow-y-auto bg-slate-50 no-scrollbar">
                     {displayData && (
                         <div className="p-5 flex flex-col gap-6">
-                            
+
                             {/* AI: ELEMENT BADGE */}
                             {displayData.elementAnalysis && (
                                 <section className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex items-start gap-3">
@@ -330,8 +335,8 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
                                             <div key={el.label} className="flex items-center gap-3">
                                                 <span className="text-xs font-semibold text-gray-600 w-8">{el.label}</span>
                                                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className={`h-full ${el.color} transition-all duration-1000`} 
+                                                    <div
+                                                        className={`h-full ${el.color} transition-all duration-1000`}
                                                         style={{ width: stage === 'open' ? `${el.val}%` : '0%' }}
                                                     ></div>
                                                 </div>
@@ -351,8 +356,8 @@ const FateCardModal: React.FC<FateCardModalProps> = ({ isOpen, onClose, inputDat
                                     </span>
                                     <div className="flex justify-center gap-2 flex-wrap relative z-10">
                                         {displayData.luckyNumbers.map((num, idx) => (
-                                            <div 
-                                                key={idx} 
+                                            <div
+                                                key={idx}
                                                 className="w-10 h-10 rounded-full bg-white text-slate-900 font-bold text-sm flex items-center justify-center shadow-lg"
                                             >
                                                 {num}

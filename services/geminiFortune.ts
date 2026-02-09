@@ -21,11 +21,12 @@ export const GeminiFortuneService = {
         lang: 'vn' | 'en' | 'kr'
     ): Promise<GeminiFortuneResponse | null> => {
         
-        const apiKey = process.env.API_KEY;
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        console.log("API Key Status:", apiKey ? "Present" : "Missing");
 
         if (!apiKey) {
-            console.warn("❌ API_KEY is missing.");
-            return null;
+            console.warn("❌ VITE_GEMINI_API_KEY is missing.");
+            throw new Error("API Key is missing in environment variables.");
         }
 
         const ai = new GoogleGenAI({ apiKey: apiKey });
@@ -52,46 +53,41 @@ export const GeminiFortuneService = {
         Return ONLY valid JSON.
         `;
 
-        try {
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview', 
-                contents: prompt,
-                config: {
-                    responseMimeType: 'application/json',
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            score: { type: Type.INTEGER, description: "Daily luck score from 0 to 100" },
-                            summary: { type: Type.STRING, description: "A long, poetic overview of the day's energy (min 50 words)." },
-                            health: { type: Type.STRING, description: "Detailed health advice using Five Elements logic (min 4 sentences)." },
-                            career: { type: Type.STRING, description: "Detailed career storytelling with specific metaphors (min 4 sentences)." },
-                            love: { type: Type.STRING, description: "Detailed relationship analysis involving harmony and conflict (min 4 sentences)." },
-                            lucky_number: { type: Type.STRING },
-                            lucky_color: { type: Type.STRING },
-                            lucky_time: { type: Type.STRING },
-                            action_advice: { type: Type.STRING, description: "One specific, mystical actionable tip." }
-                        },
-                        required: ["score", "summary", "health", "career", "love", "lucky_number", "lucky_color", "lucky_time", "action_advice"]
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.0-flash', 
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        score: { type: Type.INTEGER, description: "Daily luck score from 0 to 100" },
+                        summary: { type: Type.STRING, description: "A long, poetic overview of the day's energy (min 50 words)." },
+                        health: { type: Type.STRING, description: "Detailed health advice using Five Elements logic (min 4 sentences)." },
+                        career: { type: Type.STRING, description: "Detailed career storytelling with specific metaphors (min 4 sentences)." },
+                        love: { type: Type.STRING, description: "Detailed relationship analysis involving harmony and conflict (min 4 sentences)." },
+                        lucky_number: { type: Type.STRING },
+                        lucky_color: { type: Type.STRING },
+                        lucky_time: { type: Type.STRING },
+                        action_advice: { type: Type.STRING, description: "One specific, mystical actionable tip." }
                     },
-                    safetySettings: [
-                        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-                    ]
-                }
-            });
+                    required: ["score", "summary", "health", "career", "love", "lucky_number", "lucky_color", "lucky_time", "action_advice"]
+                },
+                safetySettings: [
+                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+                ]
+            }
+        });
 
-            let textResponse = response.text;
-            if (!textResponse) return null;
+        let textResponse = response.text;
+        if (!textResponse) throw new Error("Empty response from Gemini.");
 
-            // Clean Markdown (```json ... ```)
-            textResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
+        // Clean Markdown (```json ... ```)
+        textResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
 
-            return JSON.parse(textResponse) as GeminiFortuneResponse;
-        } catch (error) {
-            console.error("❌ Fortune Error:", error);
-            return null;
-        }
+        return JSON.parse(textResponse) as GeminiFortuneResponse;
     }
 };

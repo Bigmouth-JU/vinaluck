@@ -28,10 +28,10 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [deepInput, setDeepInput] = useState({ year: '1996', month: '1', day: '1', hour: '9' });
     const [aiResult, setAiResult] = useState<GeminiFortuneResponse | null>(null);
-    
+
     // Trigger to force lottery reset/refresh
     const [resetKey, setResetKey] = useState(0);
-    
+
     const scrollRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -39,7 +39,7 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
             setIsAnalyzed(false);
             setShowSheet(false);
             setAiResult(null);
-            let initialYear = 2008; 
+            let initialYear = 2008;
             if (birthYear) {
                 initialYear = birthYear;
             } else {
@@ -50,11 +50,11 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                     }
                 }
             }
-            setDeepInput({ 
-                year: initialYear.toString(), 
-                month: (new Date().getMonth() + 1).toString(), 
-                day: new Date().getDate().toString(), 
-                hour: '9' 
+            setDeepInput({
+                year: initialYear.toString(),
+                month: (new Date().getMonth() + 1).toString(),
+                day: new Date().getDate().toString(),
+                hour: '9'
             });
         }
     }, [isOpen, data, birthYear]);
@@ -64,15 +64,20 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
         setAiResult(null);
 
         if (data) {
-            const aiData = await GeminiFortuneService.analyzeDailyFortune(
-                "Bạn", 
-                "male", 
-                deepInput,
-                t.zodiac[data.id as keyof typeof t.zodiac],
-                lang
-            );
-            if (aiData) {
-                setAiResult(aiData);
+            try {
+                const aiData = await GeminiFortuneService.analyzeDailyFortune(
+                    "Bạn",
+                    "male",
+                    deepInput,
+                    t.zodiac[data.id as keyof typeof t.zodiac],
+                    lang
+                );
+                if (aiData) {
+                    setAiResult(aiData);
+                }
+            } catch (error: any) {
+                console.error("Gemini API Error details:", error);
+                alert(`Gemini API Error: ${error.message || "Unknown error"}`);
             }
         }
 
@@ -121,11 +126,11 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
 
     return (
         <div className="absolute inset-0 z-50 flex flex-col bg-white overflow-hidden animate-slide-in-right">
-            
+
             {/* Header */}
             <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md px-4 py-3 flex items-center gap-3 shrink-0 border-b border-gray-100 shadow-sm">
-                <button 
-                    onClick={onBack} 
+                <button
+                    onClick={onBack}
                     className="w-9 h-9 bg-slate-50 hover:bg-slate-100 rounded-full flex items-center justify-center text-slate-600 transition-colors"
                 >
                     <ArrowLeft size={20} />
@@ -138,7 +143,7 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                         {aiResult ? t.fortune.interpretedByAi : t.header.fortuneSub}
                     </p>
                 </div>
-                
+
                 {/* Score Badge */}
                 <div className="ml-auto flex flex-col items-end">
                     <span className="text-[10px] font-bold text-gray-400 uppercase">Score</span>
@@ -151,20 +156,20 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
             {/* Content */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto no-scrollbar w-full bg-slate-50">
                 <main className="flex flex-col p-4 gap-4 pb-20">
-                    
+
                     {/* 1. IDENTITY CARD */}
                     <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4 relative overflow-hidden">
                         <div className="absolute right-0 top-0 w-32 h-32 bg-red-50 rounded-full -mr-10 -mt-10 opacity-50"></div>
-                        
+
                         <div className="relative w-20 h-20 rounded-full border-4 border-white shadow-lg overflow-hidden shrink-0">
                             <img alt={data.name} className="w-full h-full object-cover" src={data.image} />
                         </div>
-                        
+
                         <div className="flex flex-col z-10">
                             <h2 className="text-2xl font-bold font-heading text-slate-800 uppercase">
                                 {t.zodiac[data.id as keyof typeof t.zodiac]}
                             </h2>
-                            <button 
+                            <button
                                 onClick={() => setShowSheet(true)}
                                 className="flex items-center gap-1 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-lg mt-1 w-fit hover:bg-slate-200 transition-colors"
                             >
@@ -186,7 +191,7 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                             <p className="text-sm font-medium leading-relaxed opacity-95">
                                 "{displayData.summary}"
                             </p>
-                            
+
                             {/* Action Advice Chip */}
                             {displayData.action && (
                                 <div className="mt-3 bg-white/20 backdrop-blur-md rounded-lg p-3 border border-white/10">
@@ -263,11 +268,11 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
 
                     {/* 5. AI LOTTO RECS */}
                     <div className="mt-2">
-                         <LottoRecommendation lang={lang} seedNumbers={[displayData.luckyNumber]} resetKey={resetKey} />
+                        <LottoRecommendation lang={lang} seedNumbers={[displayData.luckyNumber]} resetKey={resetKey} />
                     </div>
 
                     {/* CTA Button */}
-                    <button 
+                    <button
                         onClick={() => setShowSheet(true)}
                         className="w-full bg-slate-900 text-white rounded-xl py-4 font-bold shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
                     >
@@ -281,13 +286,13 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
             {/* BOTTOM SHEET FOR INPUT */}
             {showSheet && (
                 <div className="absolute inset-0 z-50 flex flex-col justify-end">
-                    <div 
-                        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" 
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
                         onClick={() => setShowSheet(false)}
                     ></div>
                     <div className="relative bg-white w-full rounded-t-[32px] p-6 pb-10 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] animate-bounce-in z-10">
                         <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
-                        
+
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold font-heading text-slate-900">{t.fortune.deepTitle}</h3>
                             <button onClick={() => setShowSheet(false)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
@@ -300,9 +305,9 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                             <div>
                                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">{t.fortune.yearLabel}</label>
                                 <div className="relative">
-                                    <select 
-                                        value={deepInput.year} 
-                                        onChange={(e) => setDeepInput({...deepInput, year: e.target.value})} 
+                                    <select
+                                        value={deepInput.year}
+                                        onChange={(e) => setDeepInput({ ...deepInput, year: e.target.value })}
                                         className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-4 py-4 text-lg font-bold text-slate-800 outline-none focus:border-indigo-500 transition-colors appearance-none"
                                     >
                                         {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
@@ -316,7 +321,7 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase text-center block">Ngày</label>
                                     <div className="relative">
-                                        <select value={deepInput.day} onChange={(e) => setDeepInput({...deepInput, day: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-2 text-center font-bold text-slate-800 appearance-none outline-none focus:border-indigo-500">
+                                        <select value={deepInput.day} onChange={(e) => setDeepInput({ ...deepInput, day: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-2 text-center font-bold text-slate-800 appearance-none outline-none focus:border-indigo-500">
                                             {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
                                         </select>
                                     </div>
@@ -324,7 +329,7 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase text-center block">Tháng</label>
                                     <div className="relative">
-                                        <select value={deepInput.month} onChange={(e) => setDeepInput({...deepInput, month: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-2 text-center font-bold text-slate-800 appearance-none outline-none focus:border-indigo-500">
+                                        <select value={deepInput.month} onChange={(e) => setDeepInput({ ...deepInput, month: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-2 text-center font-bold text-slate-800 appearance-none outline-none focus:border-indigo-500">
                                             {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
                                         </select>
                                     </div>
@@ -332,16 +337,16 @@ const DailyFortuneModal: React.FC<DailyFortuneModalProps> = ({ isOpen, onBack, d
                                 <div className="space-y-2">
                                     <label className="text-xs font-bold text-gray-500 uppercase text-center block">Giờ</label>
                                     <div className="relative">
-                                        <select value={deepInput.hour} onChange={(e) => setDeepInput({...deepInput, hour: e.target.value})} className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-2 text-center font-bold text-slate-800 appearance-none outline-none focus:border-indigo-500">
+                                        <select value={deepInput.hour} onChange={(e) => setDeepInput({ ...deepInput, hour: e.target.value })} className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 px-2 text-center font-bold text-slate-800 appearance-none outline-none focus:border-indigo-500">
                                             {HOURS.map(h => <option key={h} value={h}>{h}:00</option>)}
                                         </select>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <button 
-                                onClick={handleAnalyze} 
-                                disabled={isAnalyzing} 
+
+                            <button
+                                onClick={handleAnalyze}
+                                disabled={isAnalyzing}
                                 className="w-full h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-2"
                             >
                                 {isAnalyzing ? (

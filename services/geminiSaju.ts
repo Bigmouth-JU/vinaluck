@@ -20,14 +20,15 @@ export const GeminiSajuService = {
         userQuestion: string,
         lang: 'vn' | 'en' | 'kr'
     ): Promise<GeminiSajuResponse | null> => {
-        
+
         console.log("Saju Service Started");
-        
-        const apiKey = process.env.API_KEY;
+
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        console.log("API Key Status:", apiKey ? "Present" : "Missing");
 
         if (!apiKey) {
-            console.error("❌ API_KEY is missing.");
-            return null;
+            console.error("❌ VITE_GEMINI_API_KEY is missing.");
+            throw new Error("API Key is missing in environment variables.");
         }
 
         const ai = new GoogleGenAI({ apiKey: apiKey });
@@ -51,42 +52,37 @@ export const GeminiSajuService = {
         IMPORTANT: Return ONLY valid JSON. No markdown formatting outside the JSON string values.
         `;
 
-        try {
-            const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview', 
-                contents: prompt,
-                config: {
-                    responseMimeType: 'application/json',
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
-                            element_analysis: { type: Type.STRING },
-                            main_prediction: { type: Type.STRING },
-                            advice: { type: Type.STRING },
-                            lucky_direction: { type: Type.STRING },
-                            lucky_color: { type: Type.STRING }
-                        },
-                        required: ["element_analysis", "main_prediction", "advice", "lucky_direction", "lucky_color"]
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.0-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        element_analysis: { type: Type.STRING },
+                        main_prediction: { type: Type.STRING },
+                        advice: { type: Type.STRING },
+                        lucky_direction: { type: Type.STRING },
+                        lucky_color: { type: Type.STRING }
                     },
-                    safetySettings: [
-                        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-                    ]
-                }
-            });
+                    required: ["element_analysis", "main_prediction", "advice", "lucky_direction", "lucky_color"]
+                },
+                safetySettings: [
+                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+                ]
+            }
+        });
 
-            let textResponse = response.text;
-            if (!textResponse) return null;
-            
-            // Clean Markdown (```json ... ```)
-            textResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
-            
-            return JSON.parse(textResponse) as GeminiSajuResponse;
-        } catch (error) {
-            console.error("❌ Saju Error:", error);
-            return null;
-        }
+        let textResponse = response.text;
+        if (!textResponse) throw new Error("Empty response from Gemini.");
+
+        // Clean Markdown (```json ... ```)
+        textResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
+
+        return JSON.parse(textResponse) as GeminiSajuResponse;
     }
 };
