@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType as FunctionDeclarationSchemaType } from "@google/generative-ai";
 
 export interface GeminiDreamResponse {
     summary: string;
@@ -18,7 +18,23 @@ export const GeminiDreamService = {
             throw new Error("API Key is missing in environment variables.");
         }
 
-        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: FunctionDeclarationSchemaType.OBJECT,
+                    properties: {
+                        summary: { type: FunctionDeclarationSchemaType.STRING },
+                        detailed_analysis: { type: FunctionDeclarationSchemaType.STRING },
+                        lucky_numbers: { type: FunctionDeclarationSchemaType.ARRAY, items: { type: FunctionDeclarationSchemaType.STRING } },
+                        action_advice: { type: FunctionDeclarationSchemaType.STRING }
+                    },
+                    required: ["summary", "detailed_analysis", "lucky_numbers", "action_advice"]
+                }
+            }
+        });
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
         if (lang === 'kr') langInstruction = "Language: Korean (한국어).";
@@ -32,26 +48,8 @@ export const GeminiDreamService = {
         Return ONLY valid JSON.
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: 'application/json',
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        summary: { type: Type.STRING },
-                        detailed_analysis: { type: Type.STRING },
-                        lucky_numbers: { type: Type.ARRAY, items: { type: Type.STRING } },
-                        action_advice: { type: Type.STRING }
-                    },
-                    required: ["summary", "detailed_analysis", "lucky_numbers", "action_advice"]
-                }
-            }
-        });
-
-        const textResponse = response.text;
-        if (!textResponse) throw new Error("Empty response from Gemini.");
+        const result = await model.generateContent(prompt);
+        const textResponse = result.response.text();
         return JSON.parse(textResponse) as GeminiDreamResponse;
     }
 };

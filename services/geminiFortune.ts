@@ -1,26 +1,26 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType as FunctionDeclarationSchemaType } from "@google/generative-ai";
 
-export interface GeminiFortuneResponse {
-    score: number;
-    summary: string;
-    health: string;
-    career: string;
+export interface ZodiacFortune {
+    overview: string;
     love: string;
-    lucky_number: string;
+    money: string;
+    health: string;
     lucky_color: string;
+    lucky_number: string;
     lucky_time: string;
-    action_advice: string;
 }
 
 export const GeminiFortuneService = {
     analyzeDailyFortune: async (
         name: string,
         gender: string,
-        dob: { year: string; month: string; day: string; hour: string },
-        zodiac: string,
+        userInput: string,
+        zodiacSign: string,
         lang: 'vn' | 'en' | 'kr'
-    ): Promise<GeminiFortuneResponse | null> => {
-        
+    ): Promise<ZodiacFortune | null> => {
+
+        console.log("Fortune Service Started");
+
         const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
         console.log("API Key Status:", apiKey ? "Present" : "Missing");
 
@@ -29,65 +29,47 @@ export const GeminiFortuneService = {
             throw new Error("API Key is missing in environment variables.");
         }
 
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-        const today = new Date().toLocaleDateString('vi-VN');
+        const genAI = new GoogleGenerativeAI(apiKey);
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
         if (lang === 'kr') langInstruction = "Language: Korean (한국어).";
         if (lang === 'en') langInstruction = "Language: English.";
 
         const prompt = `
-        IMPORTANT: You are a Talkative, Mystical 80-year-old Feng Shui Master. 
-        Your answers must be LONG and DETAILED. Never be brief.
-        
-        User: ${name} (${gender}), DOB: ${dob.day}/${dob.month}/${dob.year}, Zodiac: ${zodiac}. Date: ${today}.
+        Role: Master Fortune Teller.
+        User: ${name} (${gender}), Zodiac: ${zodiacSign}.
+        Input: "${userInput}".
         ${langInstruction}
-
-        CRITICAL INSTRUCTIONS FOR LENGTH & DEPTH:
-        1. **WRITE LONG PARAGRAPHS**: Write at least 4-5 full sentences for EVERY section (Health, Career, Love, Summary).
-        2. **USE FIVE ELEMENTS (Ngũ Hành)**: Explain the "Why" using Metal, Wood, Water, Fire, Earth logic.
-           - Example: "Because today's Water energy nourishes your Wood element, you will feel..."
-        3. **TONE**: Poetic, empathetic, and wise. Use nature metaphors (e.g., "Like a boat sailing against the wind").
-        4. **NO SHORT ANSWERS**: If you write a short answer, the user will be unhappy. Be verbose.
-        
+        Tone: Mystical, encouraging.
         Return ONLY valid JSON.
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash', 
-            contents: prompt,
-            config: {
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
                 responseMimeType: 'application/json',
                 responseSchema: {
-                    type: Type.OBJECT,
+                    type: FunctionDeclarationSchemaType.OBJECT,
                     properties: {
-                        score: { type: Type.INTEGER, description: "Daily luck score from 0 to 100" },
-                        summary: { type: Type.STRING, description: "A long, poetic overview of the day's energy (min 50 words)." },
-                        health: { type: Type.STRING, description: "Detailed health advice using Five Elements logic (min 4 sentences)." },
-                        career: { type: Type.STRING, description: "Detailed career storytelling with specific metaphors (min 4 sentences)." },
-                        love: { type: Type.STRING, description: "Detailed relationship analysis involving harmony and conflict (min 4 sentences)." },
-                        lucky_number: { type: Type.STRING },
-                        lucky_color: { type: Type.STRING },
-                        lucky_time: { type: Type.STRING },
-                        action_advice: { type: Type.STRING, description: "One specific, mystical actionable tip." }
+                        overview: { type: FunctionDeclarationSchemaType.STRING },
+                        love: { type: FunctionDeclarationSchemaType.STRING },
+                        money: { type: FunctionDeclarationSchemaType.STRING },
+                        health: { type: FunctionDeclarationSchemaType.STRING },
+                        lucky_color: { type: FunctionDeclarationSchemaType.STRING },
+                        lucky_number: { type: FunctionDeclarationSchemaType.STRING },
+                        lucky_time: { type: FunctionDeclarationSchemaType.STRING }
                     },
-                    required: ["score", "summary", "health", "career", "love", "lucky_number", "lucky_color", "lucky_time", "action_advice"]
-                },
-                safetySettings: [
-                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-                ]
+                    required: ["overview", "love", "money", "health", "lucky_color", "lucky_number", "lucky_time"]
+                }
             }
         });
 
-        let textResponse = response.text;
-        if (!textResponse) throw new Error("Empty response from Gemini.");
+        const result = await model.generateContent(prompt);
+        const textResponse = result.response.text();
 
-        // Clean Markdown (```json ... ```)
-        textResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
+        // Clean Markdown if present (though responseMimeType should prevent it, safety first)
+        let cleanedTextResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
 
-        return JSON.parse(textResponse) as GeminiFortuneResponse;
+        return JSON.parse(cleanedTextResponse) as ZodiacFortune;
     }
 };

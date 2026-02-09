@@ -82,18 +82,18 @@ const LAUNCH_DATA: LottoResult[] = [
     }
 ];
 
-const HomePage: React.FC<HomePageProps> = ({ 
-    onZodiacSelect, 
-    onShopeeClick, 
-    savedCount, 
-    savedTickets, 
-    onNavigateToHistory, 
-    onOpenAiPick, 
-    onShowFateInput, 
+const HomePage: React.FC<HomePageProps> = ({
+    onZodiacSelect,
+    onShopeeClick,
+    savedCount,
+    savedTickets,
+    onNavigateToHistory,
+    onOpenAiPick,
+    onShowFateInput,
     onDreamSearch,
     onNavigateToDream
 }) => {
-    
+
     // Get translations from Context
     const { t, language } = useLanguage();
 
@@ -105,7 +105,7 @@ const HomePage: React.FC<HomePageProps> = ({
     const [year, setYear] = useState('1990');
     const [time, setTime] = useState('unknown');
     const [topic, setTopic] = useState('money');
-    const [specificConcern, setSpecificConcern] = useState(''); 
+    const [specificConcern, setSpecificConcern] = useState('');
 
     // Lottery Data State (Initialized with verified Launch Data)
     const [lotteryData] = useState<LottoResult[]>(LAUNCH_DATA);
@@ -130,8 +130,13 @@ const HomePage: React.FC<HomePageProps> = ({
 
     const handleAnalyzeFate = () => {
         if (!name.trim()) {
+            // Using a simple alert for validation feedback as requested
+            alert("Vui lòng nhập họ tên để tiếp tục.");
             return;
         }
+
+        console.log("Analyze Fate Triggered for:", name);
+
         // Prepare Input Data for Parent to Handle (API Call)
         const topicLabel = TOPICS.find(t => t.id === topic)?.label || topic;
         onShowFateInput({
@@ -148,7 +153,7 @@ const HomePage: React.FC<HomePageProps> = ({
 
     return (
         <main className="flex flex-col w-full animate-fade-in bg-[#F5F7FA] min-h-full relative">
-            
+
             {/* 1. HERO BACKGROUND LAYER (Absolute) */}
             <div className="absolute top-0 left-0 w-full h-[500px] bg-[#D02622] z-0" />
 
@@ -157,14 +162,14 @@ const HomePage: React.FC<HomePageProps> = ({
             <div className="relative z-10 w-full pt-4 pb-20">
                 <UnifiedJackpotCarousel t={t} data={lotteryData} />
             </div>
-            
+
             {/* 3. OVERLAPPING CONTENT SHEET */}
             {/* 
                 - rounded-t-[32px] and -mt-12 create the card effect 
                 - Adjusted pb-8 to reduce whitespace (was pb-32)
             */}
             <div className="relative z-20 bg-[#F5F7FA] rounded-t-[32px] -mt-12 px-4 pt-8 pb-8 flex flex-col gap-6 shadow-[0_-4px_20px_rgba(0,0,0,0.1)]">
-                
+
                 {/* A. TODAY'S LUCK (Zodiac Grid) */}
                 <DailyLuck onZodiacSelect={onZodiacSelect} t={t} onShopeeClick={onShopeeClick} />
 
@@ -174,7 +179,7 @@ const HomePage: React.FC<HomePageProps> = ({
                 {/* C. FATE INPUT FORM */}
                 <section>
                     <div className="bg-white rounded-2xl p-5 shadow-sm flex flex-col gap-4 border border-gray-100">
-                        
+
                         {/* Header: Unified Style - Uppercase */}
                         <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
                             <span className="text-xl">📜</span>
@@ -185,12 +190,12 @@ const HomePage: React.FC<HomePageProps> = ({
 
                         {/* Inputs */}
                         <div className="flex flex-col gap-4">
-                            
+
                             {/* Name & Gender Row */}
                             <div className="flex gap-2">
                                 <div className="relative flex-1">
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                    <input 
+                                    <input
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
@@ -199,13 +204,13 @@ const HomePage: React.FC<HomePageProps> = ({
                                     />
                                 </div>
                                 <div className="flex bg-gray-100 p-1 rounded-xl h-11 w-32 shrink-0">
-                                    <button 
+                                    <button
                                         onClick={() => setGender('male')}
                                         className={`flex-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center ${gender === 'male' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500'}`}
                                     >
                                         🚹
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setGender('female')}
                                         className={`flex-1 rounded-lg text-xs font-semibold transition-all flex items-center justify-center ${gender === 'female' ? 'bg-[#ED1C24] text-white shadow-sm' : 'text-gray-500'}`}
                                     >
@@ -231,7 +236,7 @@ const HomePage: React.FC<HomePageProps> = ({
                                         {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                                     </select>
                                 </div>
-                                 <div className="relative">
+                                <div className="relative">
                                     <select value={time} onChange={(e) => setTime(e.target.value)} className="w-full h-10 bg-gray-50 border border-gray-200 rounded-lg px-1 text-sm font-normal text-gray-700 appearance-none outline-none focus:border-primary text-center">
                                         <option value="unknown">?</option>
                                         {HOURS.map(h => <option key={h} value={h}>{h}</option>)}
@@ -271,7 +276,7 @@ const HomePage: React.FC<HomePageProps> = ({
                             </div>
 
                             {/* Analyze Button: Semibold instead of Black */}
-                            <button 
+                            <button
                                 onClick={handleAnalyzeFate}
                                 className="w-full h-12 bg-gradient-to-r from-[#B01E17] to-[#ED1C24] hover:opacity-90 text-white rounded-xl shadow-lg shadow-red-200 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                             >
@@ -285,20 +290,20 @@ const HomePage: React.FC<HomePageProps> = ({
                 {/* D. RECENT ACTIVITY WIDGET */}
                 <section className="mb-2">
                     <div className="flex items-center justify-between px-1 mb-3">
-                         {/* Unified Title Style */}
-                         <h3 className="text-lg font-bold font-heading text-gray-800 uppercase tracking-tight">{t.home.recentTickets}</h3>
-                         {savedCount > 0 && (
+                        {/* Unified Title Style */}
+                        <h3 className="text-lg font-bold font-heading text-gray-800 uppercase tracking-tight">{t.home.recentTickets}</h3>
+                        {savedCount > 0 && (
                             <button onClick={onNavigateToHistory} className="text-[10px] font-bold text-primary hover:underline flex items-center gap-0.5">
                                 {t.home.viewAll} <ChevronRight size={12} />
                             </button>
-                         )}
+                        )}
                     </div>
-                    
+
                     {recentTickets.length > 0 ? (
                         <div className="flex flex-col gap-2">
                             {recentTickets.map((ticket) => (
-                                <div 
-                                    key={ticket.id} 
+                                <div
+                                    key={ticket.id}
                                     onClick={onNavigateToHistory}
                                     className="bg-white rounded-xl p-3 shadow-sm border border-gray-100 flex flex-col gap-2 relative overflow-hidden cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.98]"
                                 >
@@ -337,7 +342,7 @@ const HomePage: React.FC<HomePageProps> = ({
                                 <Bot size={24} />
                             </div>
                             <p className="text-[10px] text-gray-400 font-medium">{t.home.noTickets}</p>
-                            <button 
+                            <button
                                 onClick={onOpenAiPick}
                                 className="mt-1 flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold px-4 py-2 rounded-full text-xs transition-colors active:scale-95"
                             >

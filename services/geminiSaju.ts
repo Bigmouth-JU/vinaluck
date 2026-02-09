@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenerativeAI, SchemaType as FunctionDeclarationSchemaType } from "@google/generative-ai";
 
 export interface GeminiSajuResponse {
     element_analysis: string;
@@ -31,7 +31,7 @@ export const GeminiSajuService = {
             throw new Error("API Key is missing in environment variables.");
         }
 
-        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const genAI = new GoogleGenerativeAI(apiKey);
         const currentDate = new Date().toLocaleDateString('vi-VN');
 
         let langInstruction = "Language: Vietnamese (Tiếng Việt).";
@@ -52,37 +52,30 @@ export const GeminiSajuService = {
         IMPORTANT: Return ONLY valid JSON. No markdown formatting outside the JSON string values.
         `;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
-            config: {
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
                 responseMimeType: 'application/json',
                 responseSchema: {
-                    type: Type.OBJECT,
+                    type: FunctionDeclarationSchemaType.OBJECT,
                     properties: {
-                        element_analysis: { type: Type.STRING },
-                        main_prediction: { type: Type.STRING },
-                        advice: { type: Type.STRING },
-                        lucky_direction: { type: Type.STRING },
-                        lucky_color: { type: Type.STRING }
+                        element_analysis: { type: FunctionDeclarationSchemaType.STRING },
+                        main_prediction: { type: FunctionDeclarationSchemaType.STRING },
+                        advice: { type: FunctionDeclarationSchemaType.STRING },
+                        lucky_direction: { type: FunctionDeclarationSchemaType.STRING },
+                        lucky_color: { type: FunctionDeclarationSchemaType.STRING }
                     },
                     required: ["element_analysis", "main_prediction", "advice", "lucky_direction", "lucky_color"]
-                },
-                safetySettings: [
-                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
-                ]
+                }
             }
         });
 
-        let textResponse = response.text;
-        if (!textResponse) throw new Error("Empty response from Gemini.");
+        const result = await model.generateContent(prompt);
+        const textResponse = result.response.text();
 
-        // Clean Markdown (```json ... ```)
-        textResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
+        // Clean Markdown if present
+        let cleanedTextResponse = textResponse.replace(/^```json\s*/, "").replace(/^```\s*/, "").replace(/\s*```$/, "");
 
-        return JSON.parse(textResponse) as GeminiSajuResponse;
+        return JSON.parse(cleanedTextResponse) as GeminiSajuResponse;
     }
 };
